@@ -3,8 +3,11 @@ package pl.net.bluesoft.rnd.processtool.plugins;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.dialect.Dialect;
+import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import pl.net.bluesoft.rnd.processtool.ProcessToolContextFactory;
 import pl.net.bluesoft.rnd.processtool.dao.*;
+
+import java.sql.Connection;
 
 /**
  * User: POlszewski
@@ -19,6 +22,8 @@ public interface DataRegistry {
 	boolean registerModelExtension(Class<?>... cls);
 	boolean unregisterModelExtension(Class<?>... cls);
 	void commitModelExtensions();
+
+    TransactionAwareDataSourceProxy getDataSourceProxy();
 
 	void addHibernateResource(String name, byte[] resource);
 	void removeHibernateResource(String name);
@@ -38,5 +43,5 @@ public interface DataRegistry {
 	ProcessInstanceSimpleAttributeDAO getProcessInstanceSimpleAttributeDAO(Session hibernateSession);
 	ProcessDefinitionDAO getProcessDefinitionDAO(Session hibernateSession);
 
-    OperationLockDAO getOperationLockDAO(Session hibernateSession);
+    OperationLockDAO getOperationLockDAO(Connection connection);
 }

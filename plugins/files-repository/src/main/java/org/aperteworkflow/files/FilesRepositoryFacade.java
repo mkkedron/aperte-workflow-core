@@ -1,5 +1,6 @@
 package org.aperteworkflow.files;
 
+import org.apache.commons.io.FilenameUtils;
 import org.aperteworkflow.files.dao.FilesRepositoryItemDAO;
 import org.aperteworkflow.files.dao.FilesRepositoryItemDAOImpl;
 import org.aperteworkflow.files.dao.FilesRepositoryStorageDAO;
@@ -69,6 +70,7 @@ public class FilesRepositoryFacade implements IFilesRepositoryFacade {
     public FilesRepositoryItem uploadFile(InputStream inputStream, String contentType, Long processInstanceId, String fileName, String fileDescription, String creatorLogin) throws UploadFileException {
         FilesRepositoryItem result;
         String filePath = prepareFilePath(processInstanceId, fileName);
+
         try {
             getFilesRepositoryStorageDAO().uploadFileToStorage(inputStream, filePath);
         } catch (IOException e) {

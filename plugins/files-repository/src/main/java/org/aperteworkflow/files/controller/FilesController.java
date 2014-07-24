@@ -3,6 +3,7 @@ package org.aperteworkflow.files.controller;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.aperteworkflow.files.IFilesRepositoryFacade;
 import org.aperteworkflow.files.exceptions.DeleteFileException;
@@ -67,7 +68,7 @@ public class FilesController implements IOsgiWebController {
                         InputStream fileInputStream = stream;
                         String contentType = item.getContentType();
                         Long processInstanceId = getProcessInstanceId(request);
-                        String fileName = item.getName();
+                        String fileName = FilenameUtils.getName(item.getName());
                         String fileDescription = null;
                         String creatorLogin = getCreatorLogin(request);
                         if (processInstanceId != null && fileName != null && fileName.length() > 0 && fileInputStream != null && creatorLogin != null && creatorLogin.length() > 0) {

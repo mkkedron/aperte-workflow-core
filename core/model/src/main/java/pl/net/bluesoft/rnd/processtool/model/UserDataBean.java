@@ -17,7 +17,7 @@ public class UserDataBean implements UserData {
 	private String email;
 	private String jobTitle;
 	private Long companyId;
-    private Map<String, Object> attributes;
+    private Map<String, Object> attributes = new HashMap<String, Object>();
 
 	private Set<String> roles = new HashSet<String>();
 

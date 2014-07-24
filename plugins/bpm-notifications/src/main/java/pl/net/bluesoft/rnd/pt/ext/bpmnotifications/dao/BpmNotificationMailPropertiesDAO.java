@@ -1,5 +1,6 @@
 package pl.net.bluesoft.rnd.pt.ext.bpmnotifications.dao;
 
+import org.hibernate.criterion.Restrictions;
 import pl.net.bluesoft.rnd.processtool.hibernate.SimpleHibernateBean;
 import pl.net.bluesoft.rnd.pt.ext.bpmnotifications.model.BpmNotificationMailProperties;
 
@@ -14,4 +15,6 @@ public class BpmNotificationMailPropertiesDAO extends SimpleHibernateBean<BpmNot
 	public BpmNotificationMailPropertiesDAO() {
 		super(getThreadProcessToolContext().getHibernateSession());
 	}
+
+
 }

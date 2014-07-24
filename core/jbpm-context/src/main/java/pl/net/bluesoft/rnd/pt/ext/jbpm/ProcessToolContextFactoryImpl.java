@@ -65,7 +65,6 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
         Session session = registry.getDataRegistry().getSessionFactory().openSession();
         session.setFlushMode(FlushMode.COMMIT);
         session.setCacheMode(CacheMode.IGNORE);
-
         try {
 
             try {
@@ -81,7 +80,6 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
             }
 
         } finally {
-            session.clear();
             session.close();
         }
         return result;
@@ -162,12 +160,29 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
                 result = callback.processWithContext(ctx);
 
                 try {
-                    //throw new RuntimeException();
                     tx.commit();
-                } catch (Throwable ex) {
+                }
+                catch (Throwable ex)
+                {
+                    try {
+                        tx.rollback();
+
+                    }
+                    catch (Exception e1) {
+                        logger.log(Level.WARNING, e1.getMessage(), e1);
+                    }
+
                     /* Hardcore fix //TODO change */
                     logger.severe("Ksession problem, retry: "+reload);
-                    if (reload) {
+                    if (reload)
+                    {
+                        /* Clean up before retry */
+                        if (session.isOpen())
+                            session.close();
+
+                        ctx.close();
+                        ProcessToolContext.Util.removeThreadProcessToolContext();
+
                         reloadJbpm();
                         executeWithProcessToolContextNonJta(callback,false);
                     }
@@ -202,78 +217,6 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
         return result;
     }
 
-    private <T> T executeWithProcessToolContextJta(final ReturningProcessToolContextCallback<T> callback, boolean reload) {
-        T result = null;
-        UserTransaction ut = null;
-        try {
-            ut = getUserTransaction();
-            logger.fine("ut.getStatus() = " + ut.getStatus());
-
-            if (ut.getStatus() == Status.STATUS_MARKED_ROLLBACK) {
-                ut.rollback();
-            }
-            if (ut.getStatus() != Status.STATUS_ACTIVE) {
-                ut.begin();
-            }
-
-            Session session = registry.getDataRegistry().getSessionFactory().getCurrentSession();
-
-            try {
-                ProcessToolContext ctx = new ProcessToolContextImpl(session);
-                ProcessToolContext.Util.setThreadProcessToolContext(ctx);
-                try
-                {
-                    result = callback.processWithContext(ctx);
-
-                    try {
-                        //throw new RuntimeException();
-                        ut.commit();
-                    } catch (Exception ex) {
-                    /* Hardcore fix //TODO change */
-                        logger.fine("Ksession problem, retry: "+reload);
-                        if (reload) {
-                            reloadJbpm();
-                            executeWithProcessToolContextNonJta(callback,false);
-                        }
-                    }
-                }
-                catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
-                    try
-                    {
-                        ut.rollback();
-                    }
-                    catch (Exception e1) {
-                        logger.log(Level.WARNING, e1.getMessage(), e1);
-                    }
-                    throw e;
-                }
-                finally
-                {
-                    ctx.close();
-                    ProcessToolContext.Util.removeThreadProcessToolContext();
-                }
-            } finally {
-                if (session.isOpen()) session.flush();
-            }
-            //if (ut.getStatus() == Status.STATUS_ACTIVE) 
-            ut.commit();
-        } catch (Exception e) {
-            if (ut!=null) {
-                try {
-                    ut.rollback();
-                } catch (IllegalStateException e1) {
-                    e1.printStackTrace();
-                } catch (SecurityException e1) {
-                    e1.printStackTrace();
-                } catch (SystemException e1) {
-                    e1.printStackTrace();
-                }
-            }
-            throw new RuntimeException(e);
-        }
-        return result;
-    }
 
     private synchronized <T> T executeWithProcessToolContextSynch(ReturningProcessToolContextCallback<T> callback) {
         return executeWithProcessToolContext(callback);

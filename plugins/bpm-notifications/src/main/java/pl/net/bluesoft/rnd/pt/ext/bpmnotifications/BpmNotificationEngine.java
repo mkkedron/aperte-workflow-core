@@ -6,7 +6,10 @@ import static pl.net.bluesoft.util.lang.cquery.CQuery.from;
 
 import java.net.ConnectException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,9 +36,11 @@ import pl.net.bluesoft.rnd.processtool.di.ObjectFactory;
 import pl.net.bluesoft.rnd.processtool.di.annotations.AutoInject;
 import pl.net.bluesoft.rnd.processtool.hibernate.lock.OperationWithLock;
 import pl.net.bluesoft.rnd.processtool.model.*;
+import pl.net.bluesoft.rnd.processtool.plugins.DataRegistry;
 import pl.net.bluesoft.rnd.processtool.plugins.ProcessToolRegistry;
 import pl.net.bluesoft.rnd.processtool.template.ProcessToolTemplateErrorException;
 import pl.net.bluesoft.rnd.pt.ext.bpmnotifications.facade.NotificationsFacade;
+import pl.net.bluesoft.rnd.pt.ext.bpmnotifications.facade.NotificationsJdbcFacade;
 import pl.net.bluesoft.rnd.pt.ext.bpmnotifications.model.BpmNotification;
 import pl.net.bluesoft.rnd.pt.ext.bpmnotifications.model.BpmNotificationConfig;
 import pl.net.bluesoft.rnd.pt.ext.bpmnotifications.service.IBpmNotificationService;
@@ -82,6 +87,8 @@ public class BpmNotificationEngine implements IBpmNotificationService
     private long refrshInterval;
 
     private ProcessToolBpmSession bpmSession;
+
+    ReentrantLock lock = new ReentrantLock();
     
 
     /** Data provider for standard e-mail template */
@@ -150,78 +157,98 @@ public class BpmNotificationEngine implements IBpmNotificationService
     /** The method check if there are any new notifications in database to be sent */
     public void handleNotifications()
     {
-        registry.withProcessToolContext(new ProcessToolContextCallback() {
-            @Override
-            public void withContext(ProcessToolContext ctx) {
-                handleNotificationsWithContext();
-                ProcessToolContext.Util.getThreadProcessToolContext().getHibernateSession().flush();
+        try {
+            if (lock.tryLock()) {
+                registry.withOperationLock(new OperationWithLock<Object>() {
+                    @Override
+                    public Object action(ProcessToolContext ctx)
+                    {
+                        handleNotificationsWithContext();
+                        return null;
+                    }
+                }, NOTIFICATION_LOCK_NAME, OperationLockMode.IGNORE, 1);
+            } else {
+                logger.info("Previous execution did not finish. Skipping.");
             }
-        });
-//        registry.withOperationLock(new OperationWithLock<Object>() {
-//            @Override
-//            public Object action(ProcessToolContext ctx)
-//            {
-//                Session session = ProcessToolContext.Util.getThreadProcessToolContext().getHibernateSession();
-//                Transaction transaction = session.beginTransaction();
-//                try
-//                {
-//                    handleNotificationsWithContext();
-//                    transaction.commit();
-//                }
-//                catch (Throwable e)
-//                {
-//                    logger.log(Level.SEVERE, e.getMessage(), e);
-//                    transaction.rollback();
-//                }
-//                return null;
-//            }
-//        }, NOTIFICATION_LOCK_NAME, OperationLockMode.IGNORE, 1);
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE,"Error while performing job: " + ex.getMessage(),ex);
+        } finally {
+            lock.unlock();
+        }
+
     }
     
     /** The method check if there are any new notifications in database to be sent */
     public void handleNotificationsWithContext()
     {
-    	logger.info("[NOTIFICATIONS JOB] Checking awaiting notifications... ");
+        Connection connection = null;
+        try
+        {
+            connection = registry.getDataRegistry().getDataSourceProxy().getConnection();
+            connection.setAutoCommit(false);
+            logger.info("[NOTIFICATIONS JOB] Checking awaiting notifications... ");
 
         /* Get all notifications waiting to be sent */
-        Collection<BpmNotification> notificationsToSend = NotificationsFacade.getNotificationsToSend(30000);
+            Collection<BpmNotification> notificationsToSend = NotificationsJdbcFacade.getNotificationsToSend(connection, 30000, 10);
 
-        logger.info("[NOTIFICATIONS JOB] "+notificationsToSend.size()+" notifications waiting to be sent...");
+            logger.info("[NOTIFICATIONS JOB] " + notificationsToSend.size() + " notifications waiting to be sent...");
 
-        Map<String,BpmNotification> notificationsToSendMap = new HashMap<String, BpmNotification>();
+            Map<String, BpmNotification> notificationsToSendMap = new HashMap<String, BpmNotification>();
 
-        for(BpmNotification notification: notificationsToSend)
-        {
-            if(notification.isGroupNotifications())
-            {
-                BpmNotification groupedNotif = notificationsToSendMap.get(notification.getRecipient());
+            for (BpmNotification notification : notificationsToSend) {
+                if (notification.isGroupNotifications()) {
+                    BpmNotification groupedNotif = notificationsToSendMap.get(notification.getRecipient());
 
-                if (groupedNotif != null ){
+                    if (groupedNotif != null) {
 
-                    notificationsToSendMap.remove(groupedNotif.getRecipient());
-                    String body = groupedNotif.getBody();
-                    groupedNotif.setSubject(messageSource.getMessage("bpmnot.notify.subject.for.grouped.email"));
+                        notificationsToSendMap.remove(groupedNotif.getRecipient());
+                        String body = groupedNotif.getBody();
+                        groupedNotif.setSubject(messageSource.getMessage("bpmnot.notify.subject.for.grouped.email"));
 
-                    body += "</br></br>" + notification.getSubject();
-                    groupedNotif.setBody(body);
+                        body += "</br></br>" + notification.getSubject();
+                        groupedNotif.setBody(body);
 
-                    notificationsToSendMap.put(groupedNotif.getRecipient(), groupedNotif);
-                }
-                else{
-                    notification.setBody(notification.getSubject());
-                    notificationsToSendMap.put(notification.getRecipient(), notification);
+                        notificationsToSendMap.put(groupedNotif.getRecipient(), groupedNotif);
+                    } else {
+                        notification.setBody(notification.getSubject());
+                        notificationsToSendMap.put(notification.getRecipient(), notification);
+                    }
+                } else {
+                    notificationsToSendMap.put(Long.toString(notification.getNotificationCreated().getTime()), notification);
                 }
             }
-            else {
-                notificationsToSendMap.put(Long.toString(notification.getNotificationCreated().getTime()), notification);
+
+            handleNotificationsToSend(connection, notificationsToSendMap);
+        }
+        catch (Throwable e)
+        {
+            try {
+                connection.rollback();
+                logger.log(Level.SEVERE, "[NOTIFICATIONS JOB] Could not connect to server", e);
+                throw new RuntimeException("Problem with notifications", e);
+            }
+            catch (SQLException ex)
+            {
+                throw new RuntimeException("Problem with connection", e);
             }
         }
-	    	
-        handleNotificationsToSend(notificationsToSendMap);
+        finally
+        {
+            try {
+                if(connection != null) {
+                    connection.close();
+                }
+            }
+            catch (SQLException ex)
+            {
+                logger.log(Level.SEVERE, "Problem with connection closing!");
+                throw new RuntimeException("Problem with connection", ex);
+            }
+        }
+
     }
 
-    public void handleNotificationsToSend(Map<String,BpmNotification> notificationsToSendMap)
-    {
+    public void handleNotificationsToSend(Connection connection, Map<String,BpmNotification> notificationsToSendMap) throws SQLException {
         for(BpmNotification notification: notificationsToSendMap.values())
         {
             try
@@ -229,7 +256,9 @@ public class BpmNotificationEngine implements IBpmNotificationService
                 sendNotification(notification);
 
                 /* Notification was sent, so remove it from te queue */
-                NotificationsFacade.removeNotification(notification);
+                NotificationsJdbcFacade.removeNotification(connection, notification);
+
+                connection.commit();
             }
             catch(ConnectException ex)
             {
@@ -238,13 +267,16 @@ public class BpmNotificationEngine implements IBpmNotificationService
                 history.errorWhileSendingNotification(notification, ex);
 
                 /* End loop, host is invalid or down */
-                break;
+                throw new RuntimeException("Problem during notification sending...", ex);
             }
             catch(Exception ex)
             {
+
                 logger.log(Level.SEVERE, "[NOTIFICATIONS JOB] Problem during notification sending", ex);
 
                 history.errorWhileSendingNotification(notification, ex);
+
+                throw new RuntimeException("Problem during notification sending...", ex);
             }
         }
     }
@@ -569,6 +601,8 @@ public class BpmNotificationEngine implements IBpmNotificationService
 			history.errorWhileSendingNotification(notification, e);
 
             logger.log(Level.SEVERE, e.getMessage(), e);
+
+            throw new RuntimeException("Problem during notification sending...", e);
         }
     }
     

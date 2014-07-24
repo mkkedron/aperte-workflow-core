@@ -87,6 +87,8 @@
                             pl.net.bluesoft.rnd.util.i18n.impl,
                             javassist.util.proxy,org.hibernate.proxy,
                             org.osgi.framework,
+                            org.springframework.jdbc,
+                            org.springframework.jdbc.datasource,
                             org.hibernate.exception,
                             javax.mail.internet;version=!,
                             *;resolution:=optional,
