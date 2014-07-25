@@ -102,6 +102,8 @@
                             pl.net.bluesoft.rnd.processtool.hibernate.lock.exception,
                             pl.net.bluesoft.rnd.processtool.hibernate.transform,
                             pl.net.bluesoft.rnd.processtool.hibernate.types,
+                            pl.net.bluesoft.rnd.processtool.dao,
+                            pl.net.bluesoft.rnd.processtool.dao.impl,
                             org.aperteworkflow.util.vaadin,
                             org.aperteworkflow.util.vaadin.ui,
                             org.aperteworkflow.util.vaadin.ui.table,

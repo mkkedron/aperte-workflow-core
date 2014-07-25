@@ -164,6 +164,7 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
                 }
                 catch (Throwable ex)
                 {
+                    logger.log(Level.SEVERE, "Problem during context executing", ex);
                     try {
                         tx.rollback();
 
@@ -174,16 +175,21 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
 
                     /* Hardcore fix //TODO change */
                     logger.severe("Ksession problem, retry: "+reload);
-                    if (reload)
+
+
+                    if (reload && isExceptionOfClassExistis(ex, StaleObjectStateException.class))
                     {
                         /* Clean up before retry */
                         if (session.isOpen())
                             session.close();
 
+
+
                         ctx.close();
-                        ProcessToolContext.Util.removeThreadProcessToolContext();
 
                         reloadJbpm();
+
+                        ProcessToolContext.Util.removeThreadProcessToolContext();
                         executeWithProcessToolContextNonJta(callback,false);
                     }
                     else
@@ -217,6 +223,17 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
         return result;
     }
 
+
+    private boolean isExceptionOfClassExistis(Throwable rootException, Class<? extends Throwable> clazz)
+    {
+         if(rootException.getClass().equals(clazz))
+             return true;
+
+        if(rootException.getCause() == null)
+            return false;
+
+        return isExceptionOfClassExistis(rootException.getCause(), clazz);
+    }
 
     private synchronized <T> T executeWithProcessToolContextSynch(ReturningProcessToolContextCallback<T> callback) {
         return executeWithProcessToolContext(callback);

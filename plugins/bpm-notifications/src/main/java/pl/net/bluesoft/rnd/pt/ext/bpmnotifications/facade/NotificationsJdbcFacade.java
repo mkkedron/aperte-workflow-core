@@ -29,11 +29,10 @@ public class NotificationsJdbcFacade
         {
             PreparedStatement statement = connection.prepareStatement("select * from pt_ext_bpm_notification " +
                     "where groupnotifications = false or (groupnotifications = true and sendafterhour >= ? and sendafterhour <= ?) " +
-                    "order by recipient asc limit ?");
+                    "order by recipient asc");
 
             statement.setInt(1, time - interval);
             statement.setInt(2, time + interval);
-            statement.setInt(3, limit);
 
             Collection<BpmNotification> notifications = new LinkedList<BpmNotification>();
 

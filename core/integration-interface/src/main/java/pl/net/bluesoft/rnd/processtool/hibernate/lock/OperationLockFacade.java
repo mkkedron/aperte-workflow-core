@@ -73,12 +73,7 @@ public class OperationLockFacade implements ILockFacade
                 connection.close();
             }
 
-            return dataRegistry.getProcessToolContextFactory().withProcessToolContextManualTransaction(new ReturningProcessToolContextCallback<T>() {
-                @Override
-                public T processWithContext(ProcessToolContext ctx) {
-                    return operation.action(ctx);
-                }
-            });
+            return operation.action();
 
         }
         catch(Exception ex)
