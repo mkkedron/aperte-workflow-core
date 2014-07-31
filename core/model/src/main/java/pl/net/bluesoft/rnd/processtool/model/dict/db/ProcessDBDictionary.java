@@ -122,7 +122,10 @@ public class ProcessDBDictionary extends AbstractPersistentEntity implements Pro
 		return (List)CQuery.from(items.values()).orderBy(new F<ProcessDBDictionaryItem, String>() {
 			@Override
 			public String invoke(ProcessDBDictionaryItem item) {
-				return item.getValueForCurrentDate().getValue(languageCode);
+                ProcessDBDictionaryItemValue value = item.getValueForCurrentDate();
+                if (value != null)
+				    return value.getValue(languageCode);
+                return null;
 			}
 		}).toList();
 	}
@@ -170,6 +173,16 @@ public class ProcessDBDictionary extends AbstractPersistentEntity implements Pro
         if (item != null) {
             item.setDictionary(null);
             items.remove(key);
+        }
+    }
+
+    public void removeItemById(Long itemId) {
+        for (ProcessDBDictionaryItem item : items.values()) {
+            if (item.getId() != null && item.getId().equals(itemId)) {
+                item.setDictionary(null);
+                items.remove(item.getKey());
+                break;
+            }
         }
     }
 

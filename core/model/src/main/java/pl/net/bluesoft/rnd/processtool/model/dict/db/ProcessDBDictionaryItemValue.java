@@ -1,18 +1,16 @@
 package pl.net.bluesoft.rnd.processtool.model.dict.db;
 
-import java.util.*;
-
-import javax.persistence.*;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-
 import org.apache.commons.lang3.time.DateUtils;
-import org.hibernate.annotations.*;
-
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Index;
+import org.hibernate.annotations.Type;
 import pl.net.bluesoft.rnd.processtool.model.AbstractPersistentEntity;
 import pl.net.bluesoft.rnd.processtool.model.dict.ProcessDictionaryItemExtension;
 import pl.net.bluesoft.rnd.processtool.model.dict.ProcessDictionaryItemValue;
+
+import javax.persistence.*;
+import java.util.*;
 
 @Entity
 @Table(name = "pt_dictionary_item_value")
@@ -181,7 +179,17 @@ public class ProcessDBDictionaryItemValue extends AbstractPersistentEntity imple
     	return Collections.unmodifiableCollection((Set)extensions);
 	}
 
-    public void setValidityDates(Date validStartDate, Date validEndDate) {
+	@Override
+	public String getExtValue(String name) {
+		for (ProcessDBDictionaryItemExtension ext : extensions) {
+			if(name.equals(ext.getName())) {
+				return ext.getValue();
+			}
+		}
+		return null;
+	}
+
+	public void setValidityDates(Date validStartDate, Date validEndDate) {
         this.validFrom = validStartDate;
         this.validTo = validEndDate;
     }

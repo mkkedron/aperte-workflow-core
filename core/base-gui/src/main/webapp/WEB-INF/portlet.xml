@@ -39,6 +39,24 @@
 		</portlet-info>
 	</portlet>
 
+
+    <portlet>
+        <portlet-name>AperteWorkflow Dictionary Editor Portlet</portlet-name>
+        <display-name>Aperte Workflow Dictionary Editor</display-name>
+        <portlet-class>org.springframework.web.portlet.DispatcherPortlet</portlet-class>
+        <init-param>
+            <name>contextConfigLocation</name>
+            <value>/WEB-INF/spring/aperte-dictionary-editor-portlet.xml</value>
+        </init-param>
+        <supports>
+            <mime-type>text/html</mime-type>
+        </supports>
+        <portlet-info>
+            <title>Aperte Workflow Dictionary Editor</title>
+            <short-title>Dictionary Editor</short-title>
+        </portlet-info>
+    </portlet>
+
     <portlet>
         <portlet-name>AperteWorkflow Demand Registry</portlet-name>
         <display-name>AperteWorkflow Demand Registry Portlet</display-name>

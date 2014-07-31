@@ -1,7 +1,6 @@
 package pl.net.bluesoft.rnd.pt.dict.global;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import pl.net.bluesoft.rnd.processtool.dict.DictionaryItemExt;
 import pl.net.bluesoft.rnd.processtool.web.controller.ControllerMethod;
 import pl.net.bluesoft.rnd.processtool.web.controller.IOsgiWebController;
 import pl.net.bluesoft.rnd.processtool.web.controller.OsgiController;
@@ -44,38 +43,12 @@ public class DictionaryService  implements IOsgiWebController {
         logger.log(Level.ALL, "Getting for language" + langCode);
 
         String filter = invocation.getRequest().getParameter("filter");
-        String searchTerm = invocation.getRequest().getParameter("q");
 
         Collection<DictionaryItem> dictionaryItems = dictionaryFacade.getAllDictionaryItems(dictId, locale, filter);
-        Collection<DictionaryItem> results = new ArrayList<DictionaryItem>();
-        if(searchTerm == null || searchTerm.isEmpty())
-        {
-            results = dictionaryItems;
-        }
-        else
-        {
-            for(DictionaryItem item: dictionaryItems)
 
-                if(isContainText(item, searchTerm.toLowerCase()))
-                    results.add(item);
-        }
-
-
-        result.setData(results);
+        result.setData(dictionaryItems);
 
         return result;
-    }
-
-    private boolean isContainText(DictionaryItem item, String searchTerm)
-    {
-        if(item.getValue().toLowerCase().contains(searchTerm) || item.getKey().contains(searchTerm))
-            return true;
-
-        for(DictionaryItemExt ext: item.getExtensions())
-            if(ext.getValue().toLowerCase().contains(searchTerm) || ext.getKey().contains(searchTerm))
-                return true;
-
-        return false;
     }
 
 

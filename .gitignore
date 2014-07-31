@@ -2,6 +2,7 @@
 *.iws
 *.iwp
 *.ipr
+*.bak
 .idea/
 .settings
 .project

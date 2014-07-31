@@ -11,7 +11,16 @@ public class DictionaryItem
     private String key;
     private String value;
     private String description;
+    private boolean isValid;
     private Collection<DictionaryItemExt> extensions = new LinkedList<DictionaryItemExt>();
+
+    public boolean getisValid() {
+        return isValid;
+    }
+
+    public void setValid(boolean isValid) {
+        this.isValid = isValid;
+    }
 
     public String getKey() {
         return key;

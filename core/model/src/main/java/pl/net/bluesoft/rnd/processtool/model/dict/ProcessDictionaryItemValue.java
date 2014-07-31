@@ -12,4 +12,5 @@ public interface ProcessDictionaryItemValue {
     boolean isValidForDate(Date date);
     
     Collection<ProcessDictionaryItemExtension> getItemExtensions();
+	String getExtValue(String name);
 }
