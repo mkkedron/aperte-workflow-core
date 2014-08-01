@@ -173,17 +173,15 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
                         logger.log(Level.WARNING, e1.getMessage(), e1);
                     }
 
-                    /* Hardcore fix //TODO change */
-                    logger.severe("Ksession problem, retry: "+reload);
-
 
                     if (reload && isExceptionOfClassExistis(ex, StaleObjectStateException.class))
                     {
+                        /* Hardcore fix //TODO change */
+                        logger.severe("Ksession problem, retry: "+reload);
+
                         /* Clean up before retry */
                         if (session.isOpen())
                             session.close();
-
-
 
                         ctx.close();
 
