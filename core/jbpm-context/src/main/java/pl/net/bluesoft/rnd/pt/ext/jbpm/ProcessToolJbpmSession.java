@@ -774,6 +774,9 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 	@Override
 	public ProcessDiagram getProcessDiagram(BpmTask task, I18NSource i18NSource) {
 		byte[] bytes = fetchProcessResource(task.getProcessDefinition(), ProcessResourceNames.DEFINITION);
+        if(bytes == null)
+            return null;
+
 		ProcessDiagramParser parser = new ProcessDiagramParser();
 		ProcessDiagram diagram = parser.parse(new ByteArrayInputStream(bytes));
 

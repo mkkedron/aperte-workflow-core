@@ -1,8 +1,15 @@
 <#setting number_format="computer">
 
-<#assign diagram = bpmSession.getProcessDiagram(task, messageSource)>
+<#assign diagram = bpmSession.getProcessDiagram(task, messageSource)!"">
 
 <#assign counter = 0>
+
+<#if diagram == "">
+    <div class="alert alert-danger" role="alert">
+        Problem with diagram, see logs for details
+    </div>
+<#else>
+
 
 <div id="process_diagram_widget">
 
@@ -390,3 +397,4 @@
 		showDiagramFragment("${diagramWidth}","${diagramHeight}");
 	}
 </script>
+</#if>

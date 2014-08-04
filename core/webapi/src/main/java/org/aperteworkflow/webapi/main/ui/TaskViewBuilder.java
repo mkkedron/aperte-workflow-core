@@ -1,6 +1,7 @@
 package org.aperteworkflow.webapi.main.ui;
 
 import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.hibernate.Hibernate;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -168,6 +169,10 @@ public class TaskViewBuilder
 	{
         ProcessStateWidget widget = widgetHierarchyBean.getWidget();
         ProcessInstance processInstance = widgetHierarchyBean.getProcessInstance();
+        if(processInstance != null) {
+            Hibernate.initialize(processInstance.getProcessAttributes());
+            Hibernate.initialize(processInstance.getProcessSimpleAttributes());
+        }
         Element parent =  widgetHierarchyBean.getParent();
 
 		String aliasName = widget.getClassName();
