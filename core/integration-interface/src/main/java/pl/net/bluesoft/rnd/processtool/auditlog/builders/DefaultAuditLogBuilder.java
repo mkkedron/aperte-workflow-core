@@ -47,6 +47,16 @@ public class DefaultAuditLogBuilder implements AuditLogBuilder {
 		}
 	}
 
+	@Override
+	public <T extends AbstractPersistentEntity> void addPre(T entry) {
+		addPre(Collections.singleton(entry));
+	}
+
+	@Override
+	public <T extends AbstractPersistentEntity> void addPost(T entry) {
+		addPost(Collections.singleton(entry));
+	}
+
 	private static String blankToNull(String value) {
 		return hasText(value) ? value : null;
 	}

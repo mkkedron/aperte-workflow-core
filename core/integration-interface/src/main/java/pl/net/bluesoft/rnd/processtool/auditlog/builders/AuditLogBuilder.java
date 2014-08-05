@@ -13,6 +13,8 @@ import java.util.List;
  */
 public interface AuditLogBuilder {
 	void addSimple(String key, String oldValue, String newValue);
+	<T extends AbstractPersistentEntity> void addPre(T entry);
+	<T extends AbstractPersistentEntity> void addPost(T entry);
 	<T extends AbstractPersistentEntity> void addPre(Collection<T> entries);
 	<T extends AbstractPersistentEntity> void addPost(Collection<T> entries);
 
@@ -21,6 +23,12 @@ public interface AuditLogBuilder {
 	AuditLogBuilder NULL = new AuditLogBuilder() {
 		@Override
 		public void addSimple(String key, String oldValue, String newValue) {}
+
+		@Override
+		public <T extends AbstractPersistentEntity> void addPre(T entry) {}
+
+		@Override
+		public <T extends AbstractPersistentEntity> void addPost(T entry) {}
 
 		@Override
 		public <T extends AbstractPersistentEntity> void addPre(Collection<T> entries) {}

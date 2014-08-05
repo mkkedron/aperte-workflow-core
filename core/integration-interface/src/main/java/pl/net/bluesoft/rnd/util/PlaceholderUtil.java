@@ -36,10 +36,10 @@ public class PlaceholderUtil {
 				if (replacement == null) {
 					nullSubstituted = true;
 				}
-				matcher.appendReplacement(result, String.valueOf(replacement));
+				matcher.appendReplacement(result, Matcher.quoteReplacement(String.valueOf(replacement)));
 			}
 			else {
-				matcher.appendReplacement(result, matcher.group(1));
+				matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(1)));
 			}
 		}
 

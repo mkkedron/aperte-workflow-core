@@ -67,8 +67,8 @@ public class ProcessInstanceSimpleAttribute extends AbstractProcessInstanceAttri
 		this.value = value;
 	}
 
-    @Override
-    public String toString() {
-        return value;
-    }
+	@Override
+	public String toString() {
+		return getKey() + '=' + value;
+	}
 }

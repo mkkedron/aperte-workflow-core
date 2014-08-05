@@ -10,6 +10,8 @@ import pl.net.bluesoft.rnd.processtool.plugins.ProcessToolRegistry;
 
 import java.util.*;
 
+import static pl.net.bluesoft.util.lang.Strings.hasText;
+
 /**
  * Util for steps
  *
@@ -104,11 +106,11 @@ public class StepUtil {
 			return Collections.emptyMap();
 		}
 
-		Map<String, String> attributes = new HashMap<String, String>();
+		Map<String, String> attributes = new LinkedHashMap<String, String>();
 		String[] parts = query.split("[,;]");
 
 		for (String part : parts) {
-			String[] assignment = part.split("[:=]");
+			String[] assignment = part.split("[=]"); // ':' psuje skladnie #{L:attr}
 
 			if (assignment.length != 2)
 				continue;
@@ -125,7 +127,7 @@ public class StepUtil {
 
     public static List<String> evaluateList(String query)
     {
-        if(query == null) {
+        if(query == null || !hasText(query)) {
 			return Collections.emptyList();
 		}
 
