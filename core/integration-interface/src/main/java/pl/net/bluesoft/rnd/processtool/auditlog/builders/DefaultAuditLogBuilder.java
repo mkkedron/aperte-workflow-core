@@ -29,6 +29,11 @@ public class DefaultAuditLogBuilder implements AuditLogBuilder {
 	}
 
 	@Override
+	public boolean isNull() {
+		return false;
+	}
+
+	@Override
 	public void addSimple(String key, String oldValue, String newValue) {
 		AuditLogGroup group = definition.findGroup(key);
 

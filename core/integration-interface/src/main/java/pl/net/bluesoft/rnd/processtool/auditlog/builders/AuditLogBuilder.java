@@ -12,6 +12,7 @@ import java.util.List;
  * Date: 2014-06-12
  */
 public interface AuditLogBuilder {
+	boolean isNull();
 	void addSimple(String key, String oldValue, String newValue);
 	<T extends AbstractPersistentEntity> void addPre(T entry);
 	<T extends AbstractPersistentEntity> void addPost(T entry);
@@ -21,6 +22,11 @@ public interface AuditLogBuilder {
 	List<AuditLog> toAuditLogs();
 
 	AuditLogBuilder NULL = new AuditLogBuilder() {
+		@Override
+		public boolean isNull() {
+			return true;
+		}
+
 		@Override
 		public void addSimple(String key, String oldValue, String newValue) {}
 
