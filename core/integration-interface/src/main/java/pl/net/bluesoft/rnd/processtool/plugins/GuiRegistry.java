@@ -69,4 +69,8 @@ public interface GuiRegistry {
 
 	/** Get Scripts */
 	String getJavaScripts();
+
+	void registerButtonGenerator(ButtonGenerator buttonGenerator);
+	void unregisterButtonGenerator(ButtonGenerator buttonGenerator);
+	Collection<ButtonGenerator> getButtonGenerators();
 }
