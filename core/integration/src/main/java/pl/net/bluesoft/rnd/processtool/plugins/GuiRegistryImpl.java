@@ -17,10 +17,7 @@ import pl.net.bluesoft.rnd.processtool.web.view.TasksListViewBeanFactory;
 import pl.net.bluesoft.util.lang.Classes;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -46,6 +43,8 @@ public class GuiRegistryImpl implements GuiRegistry {
 	private final Map<String, IWidgetScriptProvider> widgetScriptProviders = new HashMap<String, IWidgetScriptProvider>();
 	private final Map<String, IOsgiWebController> webControllers = new HashMap<String, IOsgiWebController>();
     private final Map<String, TasksListViewBeanFactory> tasksListViews = new HashMap<String, TasksListViewBeanFactory>();
+
+	private final Set<ButtonGenerator> buttonGenerators = new LinkedHashSet<ButtonGenerator>();
 
 	private String javaScriptContent = "";
 
@@ -215,7 +214,22 @@ public class GuiRegistryImpl implements GuiRegistry {
 		return decompress(javaScriptContent);
 	}
 
-    @Override
+	@Override
+	public void registerButtonGenerator(ButtonGenerator buttonGenerator) {
+		buttonGenerators.add(buttonGenerator);
+	}
+
+	@Override
+	public void unregisterButtonGenerator(ButtonGenerator buttonGenerator) {
+		buttonGenerators.remove(buttonGenerator);
+	}
+
+	@Override
+	public Collection<ButtonGenerator> getButtonGenerators() {
+		return buttonGenerators;
+	}
+
+	@Override
     public TasksListViewBeanFactory getTasksListView(String viewName) {
         return tasksListViews.get(viewName);
     }

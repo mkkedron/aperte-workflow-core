@@ -17,6 +17,7 @@ import pl.net.bluesoft.rnd.processtool.model.config.IPermission;
 import pl.net.bluesoft.rnd.processtool.model.config.IStateWidget;
 import pl.net.bluesoft.rnd.processtool.model.config.IStateWidgetAttribute;
 import pl.net.bluesoft.rnd.processtool.model.config.ProcessStateConfiguration;
+import pl.net.bluesoft.rnd.processtool.plugins.ButtonGenerator;
 import pl.net.bluesoft.rnd.processtool.plugins.ProcessToolRegistry;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.IWidgetDataProvider;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessHtmlWidget;
@@ -424,23 +425,63 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
         actionsNode.appendChild(specificActionButtons);
 
         /* Check if the viewed object is in a terminal state */
-        if (isViewedObjectClosed()) {
-            buildCancelActionButton(genericActionButtons);
-            return;
+
+		buildGenericActionButtons(genericActionButtons);
+
+        if (!isViewedObjectClosed()) {
+			buildSpecificActionButtons(specificActionButtons);
         }
-
-        // build a view specific buttons
-        buildSpecificActionButtons(specificActionButtons);
-
-        // build a save button
-        if (isUserCanPerformActions()) {
-            buildSaveActionButton(genericActionButtons);
-        }
-
-        buildCancelActionButton(genericActionButtons);
     }
 
-    protected abstract boolean isUserCanPerformActions();
+	private void buildGenericActionButtons(Element genericActionButtons) {
+		boolean userCanPerformActions = isUserCanPerformActions();
+		boolean objectIsClosed = isViewedObjectClosed();
+
+		final List<ButtonCreator> buttonCreators = new ArrayList<ButtonCreator>();
+
+		buttonCreators.add(buildCancelActionButton());
+
+		if (!objectIsClosed && userCanPerformActions) {
+			buttonCreators.add(buildSaveActionButton());
+		}
+
+		Collection<ButtonGenerator> buttonGenerators = processToolRegistry.getGuiRegistry().getButtonGenerators();
+
+		if (!buttonCreators.isEmpty()) {
+			ButtonGenerator.Callback callback = new ButtonGenerator.Callback() {
+				@Override
+				public void createButton(int priority, String actionButtonId, String buttonClass, String iconClass,
+										 String messageKey, String descriptionKey, String clickFunction) {
+					buttonCreators.add(new ButtonCreator(priority, actionButtonId, buttonClass, iconClass,
+							messageKey, descriptionKey, clickFunction));
+				}
+
+				@Override
+				public void appendScript(String script) {
+					scriptBuilder.append(script);
+				}
+			};
+
+			for (ButtonGenerator buttonGenerator : buttonGenerators) {
+				buttonGenerator.generate(getViewedObject(), objectIsClosed, userCanPerformActions, callback);
+			}
+		}
+
+		Collections.sort(buttonCreators, BY_PRIORITY);
+
+		for (ButtonCreator buttonCreator : buttonCreators) {
+			buttonCreator.create(genericActionButtons);
+		}
+	}
+
+	private final Comparator<ButtonCreator> BY_PRIORITY = new Comparator<ButtonCreator>() {
+		@Override
+		public int compare(ButtonCreator c1, ButtonCreator c2) {
+			return c1.getPriority() < c2.getPriority() ? -1 : c1.getPriority() > c2.getPriority() ? 1 : 0;
+		}
+	};
+
+	protected abstract boolean isUserCanPerformActions();
 
     protected abstract void buildSpecificActionButtons(final Element specificActionButtons);
 
@@ -457,26 +498,15 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
      */
     protected abstract boolean isViewedObjectClosed();
 
-    protected void buildSaveActionButton(final Element parent) {
-        //String actionButtonId = "action-button-save";
-        String actionButtonId = getSaveButtonHtmlId();
-
-        Element buttonNode = parent.ownerDocument().createElement("button")
-                .attr("class", "btn btn-warning")
-                .attr("disabled", "true")
-                .attr("id", actionButtonId);
-
-        Element saveButtonIcon = parent.ownerDocument().createElement("span")
-                .attr("class", "glyphicon glyphicon-floppy-save");
-
-        parent.appendChild(buttonNode);
-        buttonNode.appendChild(saveButtonIcon);
-
-        buttonNode.appendText(i18Source.getMessage(getSaveButtonMessageKey()));
-
-        scriptBuilder.append("$('#").append(actionButtonId).append("').click(function() { " + getSaveButtonClickFunction() + "('").append(getViewedObjectId()).append("');  });");
-        scriptBuilder.append("$('#").append(actionButtonId).append("').tooltip({title: '").append(i18Source.getMessage(getSaveButtonDescriptionKey())).append("'});");
-    }
+    protected ButtonCreator buildSaveActionButton() {
+		return new ButtonCreator(100,
+				getSaveButtonHtmlId(),
+				"warning",
+				"floppy-save",
+				getSaveButtonMessageKey(),
+				getSaveButtonDescriptionKey(),
+				getSaveButtonClickFunction());
+	}
 
     protected abstract String getSaveButtonClickFunction();
 
@@ -486,29 +516,65 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
 
     protected abstract String getSaveButtonMessageKey();
 
-    protected void buildCancelActionButton(final Element parent) {
-        //String actionButtonId = "action-button-cancel";
-        String actionButtonId = getCancelButtonHtmlId();
+    protected ButtonCreator buildCancelActionButton() {
+		return new ButtonCreator(200,
+				getCancelButtonHtmlId(),
+				"info",
+				"home",
+				getCancelButtonMessageKey(),
+				getCancelButtonMessageKey(),
+				getCancelButtonClickFunction());
+	}
 
-        Element buttonNode = parent.ownerDocument().createElement("button")
-                .attr("class", "btn btn-info")
+	private class ButtonCreator {
+		private final int priority;
+		private final String actionButtonId;
+		private final String buttonClass;
+		private final String iconClass;
+		private final String messageKey;
+		private final String descriptionKey;
+		private final String clickFunction;
+
+		public ButtonCreator(int priority, String actionButtonId, String buttonClass, String iconClass, String messageKey,
+							 String descriptionKey, String clickFunction) {
+			this.priority = priority;
+			this.actionButtonId = actionButtonId;
+			this.buttonClass = buttonClass;
+			this.iconClass = iconClass;
+			this.messageKey = messageKey;
+			this.descriptionKey = descriptionKey;
+			this.clickFunction = clickFunction;
+		}
+
+		public int getPriority() {
+			return priority;
+		}
+
+		public void create(Element parent) {
+			createButton(parent, actionButtonId, buttonClass, iconClass, messageKey, descriptionKey, clickFunction);
+		}
+	}
+
+	private void createButton(Element parent, String actionButtonId, String buttonClass, String iconClass,
+							  String messageKey, String descriptionKey, String clickFunction) {
+		Element buttonNode = parent.ownerDocument().createElement("button")
+                .attr("class", buttonClass != null ? "btn btn-" + buttonClass : "btn")
                 .attr("disabled", "true")
                 .attr("id", actionButtonId);
-        parent.appendChild(buttonNode);
 
-        Element cancelButtonIcon = parent.ownerDocument().createElement("span")
-                .attr("class", "glyphicon glyphicon-home");
+		Element buttonIcon = parent.ownerDocument().createElement("span")
+                .attr("class", iconClass != null ? "glyphicon glyphicon-" + iconClass : "glyphicon");
 
-        parent.appendChild(buttonNode);
-        buttonNode.appendChild(cancelButtonIcon);
+		parent.appendChild(buttonNode);
+		buttonNode.appendChild(buttonIcon);
 
-        buttonNode.appendText(i18Source.getMessage(getCancelButtonMessageKey()));
+		buttonNode.appendText(i18Source.getMessage(messageKey));
 
-        scriptBuilder.append("$('#").append(actionButtonId).append("').click(function() { " + getCancelButtonClickFunction() + "();  });");
-        scriptBuilder.append("$('#").append(actionButtonId).append("').tooltip({title: '").append(i18Source.getMessage(getCancelButtonMessageKey())).append("'});");
-    }
+		scriptBuilder.append("$('#").append(actionButtonId).append("').click(function() { ").append(clickFunction).append("('").append(getViewedObjectId()).append("');  });");
+		scriptBuilder.append("$('#").append(actionButtonId).append("').tooltip({title: '").append(i18Source.getMessage(descriptionKey)).append("'});");
+	}
 
-    protected abstract String getCancelButtonHtmlId();
+	protected abstract String getCancelButtonHtmlId();
 
     protected abstract String getCancelButtonClickFunction();
 
