@@ -72,6 +72,9 @@ public class DictionaryService  implements IOsgiWebController {
         if(item.getValue().toLowerCase().contains(searchTerm) || item.getKey().contains(searchTerm))
             return true;
 
+        if(item.getDescription() != null && item.getDescription().toLowerCase().contains(searchTerm))
+            return true;
+
         for(DictionaryItemExt ext: item.getExtensions())
             if(ext.getValue().toLowerCase().contains(searchTerm) || ext.getKey().contains(searchTerm))
                 return true;
