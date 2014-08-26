@@ -16,7 +16,6 @@
 				<th style="width:10%;"><spring:message code="processes.list.table.process.assignee" /></th>
 				<th style="width:10%;"><spring:message code="processes.list.table.process.creationdate" /></th>
 				<th style="width:10%;"><spring:message code="processes.list.table.process.deadline" /></th>
-				<th style="width:10%;"><spring:message code="processes.list.table.process.demandTitle" /></th>
                 <th style="width:10%;"><spring:message code="processes.list.table.process.demandCostsSum" /></th>
 		</thead>
 		<tbody></tbody>
@@ -42,7 +41,6 @@
 				 { "sName":"assignee", "bSortable": true ,"bVisible":parsedProcess.assignee,"mData": function(object){return generateAssigneColumn(object);} },
 				 { "sName":"creationDate", "bSortable": true ,"bVisible":parsedProcess.creationDate,"mData": function(object){return $.format.date(object.creationDate, 'dd-MM-yyyy, HH:mm:ss');}},
 				 { "sName":"deadline","bVisible":true ,"bVisible":parsedProcess.deadline, "bSortable": true,"mData": function(object){return object.deadline == null ? "<spring:message code='processes.list.table.nodeadline' />" : $.format.date(object.deadline, 'dd-MM-yyyy, HH:mm');}},
-				 { "sName":"demandTitle", "bSortable": true ,"bVisible":parsedProcess.demandTitle, "mData":function(object){if(object.demandTitle==null)return null; else if(object.demandTitle.length > 15)return object.demandTitle.substring(0, 12)+'...'; else return object.demandTitle;}  },
 				 { "sName":"demandCostsSum", "bSortable": true ,"bVisible":parsedProcess.demandCostsSum, "mData":function(object){if(object.demandCostsSum==null)return null; else if(object.demandCostsSum.length > 15)return object.demandCostsSum.substring(0, 12)+'...'; else return object.demandCostsSum;}},
 				 { "sName":"taskAssigneDate", "bSortable": true ,"bVisible":false, "mData": function(object){return $.format.date(object.taskAssigneDate, 'yyyy-MM-dd, HH:mm:ss');}}
 			 ],
