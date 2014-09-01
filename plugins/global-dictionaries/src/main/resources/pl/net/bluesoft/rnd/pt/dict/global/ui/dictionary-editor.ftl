@@ -420,7 +420,7 @@
 				 { "sName":"key", "bSortable": true ,"mData": "key" },
 				 { "sName":"description", "bSortable": false ,"mData": function(o) { return generateDescriptionColumn(o); }
 				 },
-				 { "sName":"actions", "bSortable": false , "mData": function(o) { return ""; }, "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) { return generateActionsColumn(nTd, sData, oData, iRow, iCol) }
+				 { "sName":"actions", "bSortable": false , "mData": function(o) { return ""; }, "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) { return generateActionsColumn(nTd, sData, oData.item, iRow, iCol) }
 				 },
 				 { "sName":"value", "bSortable": false , "mData": function(o) {console.log(o); return o.value; }
 				 },
@@ -468,11 +468,10 @@
 
 
         function generateActionsColumn(nTd, sData, oData, iRow, iCol) {
-        	console.log(oData);
             var editButton = $('<button type="button" class="btn btn-primary btn-xs"><@spring.message "dictionary.editor.dictionaryItems.button.edit"/></button>');
             editButton.button();
             editButton.on('click',function(){
-                edit(oData.item);
+                edit(oData);
             });
             $(nTd).empty();
             $(nTd).prepend(editButton);
