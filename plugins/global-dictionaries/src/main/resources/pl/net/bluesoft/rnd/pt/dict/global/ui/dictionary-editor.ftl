@@ -87,19 +87,37 @@
                 </div>
                 <br>
 
-                <div class="panel-body">
-                    <table cellpadding="0" cellspacing="0" border="0" id="itemsTable"
+                <div class="panel-body" id="itemsTableTemplateDiv">
+                    <table cellpadding="0" cellspacing="0" border="0" id="itemsTableTemplate"
                            class="table table-hover table-bordered" style="width:100%;">
                         <thead>
                             <th style="font-size: 11px!important; width:110px"><@spring.message "dictionary.editor.dictionaryItems.table.key"/></th>
                             <th style="font-size: 11px!important;width:50px"><@spring.message "dictionary.editor.dictionaryItems.table.description"/></th>
                             <th style="font-size: 11px!important;width:210px"><@spring.message "dictionary.editor.dictionaryItems.table.actions"/></th>
+                            <th style="font-size: 11px!important;width:210px"><@spring.message "dictionary.editor.dictionaryItems.table.value"/></th>
                         </thead>
                         <tbody style="font-size: 12px!important;vertical-align:middle;">
 
                         </tbody>
                     </table>
-                </div>
+				</div>
+				<div class="panel-body" id="itemsTableCostAccountDiv">
+					<table cellpadding="0" cellspacing="0" border="0" id="itemsTableCostAccount"
+						   class="table table-hover table-bordered" style="width:100%;">
+						<thead>
+							<th style="font-size: 11px!important; width:110px"><@spring.message "dictionary.editor.dictionaryItems.table.key"/></th>
+							<th style="font-size: 11px!important;width:50px"><@spring.message "dictionary.editor.dictionaryItems.table.description"/></th>
+							<th style="font-size: 11px!important;width:210px"><@spring.message "dictionary.editor.dictionaryItems.table.actions"/></th>
+							<th style="font-size: 11px!important;width:210px"><@spring.message "dictionary.editor.dictionaryItems.table.value"/></th>
+							<th style="font-size: 11px!important;width:210px"><@spring.message "dictionary.editor.dictionaryItems.table.name"/></th>
+							<th style="font-size: 11px!important;width:210px"><@spring.message "dictionary.editor.dictionaryItems.table.ownerCompany"/></th>
+							<th style="font-size: 11px!important;width:210px"><@spring.message "dictionary.editor.dictionaryItems.table.ownerPeople"/></th>
+						</thead>
+						<tbody style="font-size: 12px!important;vertical-align:middle;">
+
+						</tbody>
+					</table>
+				</div>
             </div>
             <div id="itemsEdit" hidden>
                 <div class="row">
@@ -175,8 +193,10 @@
 
 <script type="text/javascript">
 //<![CDATA[
-
+	var item
     var itemsTable;
+    var itemsTableTemplate;
+    var itemsTableCostAccount;
     var valuesTable;
     var currentDict;
     var currentItem = {"key":"", "description":"", "selectedLanguage":"default", "localizedDescriptions": {"default": {"languageCode":"default", "text":""}}};
@@ -393,16 +413,43 @@
             $(nTd).append(addExtensionButton);
         }
 
-        itemsTable = new AperteDataTable("itemsTable",
-            [
-                 { "sName":"key", "bSortable": true ,"mData": "key" },
-                 { "sName":"description", "bSortable": false ,"mData": function(o) { return generateDescriptionColumn(o); }
-                 },
-                 { "sName":"actions", "bSortable": false , "mData": function(o) { return ""; }, "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) { return generateActionsColumn(nTd, sData, oData, iRow, iCol) }
-                 }
-            ],
-            [[ 0, "asc" ]]
-        );
+
+
+		itemsTableCostAccount = new AperteDataTable("itemsTableCostAccount",
+			[
+				 { "sName":"key", "bSortable": true ,"mData": "key" },
+				 { "sName":"description", "bSortable": false ,"mData": function(o) { return generateDescriptionColumn(o); }
+				 },
+				 { "sName":"actions", "bSortable": false , "mData": function(o) { return ""; }, "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) { return generateActionsColumn(nTd, sData, oData, iRow, iCol) }
+				 },
+				 { "sName":"value", "bSortable": false , "mData": function(o) {console.log(o); return o.value; }
+				 },
+				 { "sName":"name", "bSortable": false , "mData": function(o) { return o.nameCostAccount; }
+				 },
+				 { "sName":"company", "bSortable": false , "mData": function(o) { return o.ownerCompany; }
+				 },
+				 { "sName":"owner", "bSortable": false , "mData": function(o) { return o.ownerPeople; }
+				 }
+			],
+			[[ 0, "asc" ]]
+		);
+		//$('#itemsTableCostAccountDiv').css("display","none");
+
+		itemsTableTemplate = new AperteDataTable("itemsTableTemplate",
+			[
+				 { "sName":"key", "bSortable": true ,"mData": "key" },
+				 { "sName":"description", "bSortable": false ,"mData": function(o) { return generateDescriptionColumn(o); }
+				 },
+				 { "sName":"actions", "bSortable": false , "mData": function(o) { return ""; }, "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) { return generateActionsColumn(nTd, sData, oData, iRow, iCol) }
+				 },
+				 { "sName":"actions", "bSortable": false , "mData": function(o) { item = o; return o.values[0].value; }
+				 }
+			],
+			[[ 0, "asc" ]]
+		);
+
+		$('#itemsTableTemplateDiv').css("display","none");
+
 
         function generateDescriptionColumn(o) {
             if (o.description) {
@@ -412,11 +459,20 @@
             return '';
         }
 
+        function generateValue(o) {
+        	var result;
+			console.log(o.values.value);
+
+			return result;
+        }
+
+
         function generateActionsColumn(nTd, sData, oData, iRow, iCol) {
+        	console.log(oData);
             var editButton = $('<button type="button" class="btn btn-primary btn-xs"><@spring.message "dictionary.editor.dictionaryItems.button.edit"/></button>');
             editButton.button();
             editButton.on('click',function(){
-                edit(oData);
+                edit(oData.item);
             });
             $(nTd).empty();
             $(nTd).prepend(editButton);
@@ -429,10 +485,14 @@
             $(nTd).prepend("&nbsp;");
             $(nTd).prepend(removeButton);
         }
+		itemsTableCostAccount.addParameter("controller", "dpdservice");
+		itemsTableCostAccount.addParameter("action", "getCostAccountTable");
+		itemsTableCostAccount.reloadTable(dispatcherPortlet);
 
-        itemsTable.addParameter("controller", "dictionaryeditorcontroller");
-        itemsTable.addParameter("action", "getDictionaryItems");
-        itemsTable.reloadTable(dispatcherPortlet);
+        itemsTableTemplate.addParameter("controller", "dictionaryeditorcontroller");
+        itemsTableTemplate.addParameter("action", "getDictionaryItems");
+        itemsTableTemplate.reloadTable(dispatcherPortlet);
+
 
         $('#dictName').select2({
             ajax: {
@@ -468,6 +528,17 @@
         });
 		$('#dictName').on('change', function(){
 			currentDict = $('#dictName').val();
+			console.log(currentDict);
+			if(currentDict=='cost_accounts')
+			{
+				itemsTable = itemsTableCostAccount;
+				$('#itemsTableTemplateDiv').css("display","none");
+				$('#itemsTableCostAccountDiv').css("display","initial");
+			} else {
+				itemsTable = itemsTableTemplate;
+				$('#itemsTableCostAccountDiv').css("display","none");
+				$('#itemsTableTemplateDiv').css("display","initial");
+			}
 			refreshTable();
 		});
 		$("#backButton").on('click',function() {
@@ -560,6 +631,7 @@
 	function edit(item) {
         $("#itemsList").hide();
         currentItem = item;
+        console.log(item);
         currentItem.selectedLanguage = "default";
         $('input:radio[name=languageSelector-itemDesc][value=default]').prop('checked', true);
         refreshValuesTable();
@@ -595,7 +667,10 @@
 		var url = dispatcherPortlet;
         url += "&dictId=" + encodeURI(currentDict.replace(/#/g, '%23'));
         // itemsTable.addParameter("dictId", currentDict);
+        console.log('reload');
+        console.log(url);
 		itemsTable.reloadTable(url);
+		console.log('afterReload');
 	}
 
 	function refreshValuesTable() {
