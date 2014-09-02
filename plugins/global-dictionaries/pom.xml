@@ -48,7 +48,8 @@
                             pl.net.bluesoft.rnd.pt.dict.global.i18n,
 							pl.net.bluesoft.rnd.pt.dict.global.xml,
                             pl.net.bluesoft.rnd.pt.dict.global.ui,
-                            pl.net.bluesoft.rnd.pt.dict.global
+                            pl.net.bluesoft.rnd.pt.dict.global,
+							pl.net.bluesoft.rnd.pt.dict.global.controller.bean,
                         </Export-Package>
                         <Import-Package>
                             *;resolution:=optional,
@@ -77,7 +78,8 @@
                             pl.net.bluesoft.rnd.pt.dict.global.controller.DictionaryEditorController
                         </ProcessTool-Controller>
                         <ProcessTool-Spring-Beans>
-                            pl.net.bluesoft.rnd.pt.dict.global.facade.GlobalDictionaryFacade
+                            pl.net.bluesoft.rnd.pt.dict.global.facade.GlobalDictionaryFacade,
+							pl.net.bluesoft.rnd.pt.dict.global.controller.DictionaryEditorController
                         </ProcessTool-Spring-Beans>
                         <ProcessTool-I18N-Property>globaldictionaries-messages</ProcessTool-I18N-Property>
                     </instructions>
