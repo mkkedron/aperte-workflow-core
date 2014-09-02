@@ -5,12 +5,15 @@ import org.hibernate.dialect.Dialect;
 import org.hibernate.type.StandardBasicTypes;
 import org.jbpm.task.Status;
 import pl.net.bluesoft.rnd.processtool.dao.ProcessDefinitionDAO;
-import pl.net.bluesoft.rnd.processtool.model.*;
+import pl.net.bluesoft.rnd.processtool.model.BpmTask;
+import pl.net.bluesoft.rnd.processtool.model.ProcessInstance;
+import pl.net.bluesoft.rnd.processtool.model.QueueOrder;
+import pl.net.bluesoft.rnd.processtool.model.QueueType;
 import pl.net.bluesoft.rnd.processtool.model.nonpersistent.BpmTaskBean;
+import pl.net.bluesoft.rnd.processtool.web.view.IBpmTaskQueryCondition;
 import pl.net.bluesoft.rnd.util.i18n.I18NSource;
 import pl.net.bluesoft.rnd.util.i18n.I18NSourceFactory;
 import pl.net.bluesoft.util.lang.cquery.func.F;
-import sun.util.logging.resources.logging;
 
 import java.sql.Types;
 import java.util.*;
@@ -72,8 +75,45 @@ public class BpmTaskQuery {
     private String searchExpression;
     private Locale locale;
     private Collection<String> excludedDefinitionIds;
-    private QueueOrderCondition sortField;
-    private QueueOrder sortOrder;
+    private List<SortingOrder> columnSorting = new LinkedList<SortingOrder>();
+
+    private class SortingOrder implements Comparable<SortingOrder>
+    {
+        private String columnName;
+        private Integer priority;
+        private QueueOrder order;
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+        public void setColumnName(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public Integer getPriority() {
+            return priority;
+        }
+
+        public void setPriority(Integer priority) {
+            this.priority = priority;
+        }
+
+        public QueueOrder getOrder() {
+            return order;
+        }
+
+        public void setOrder(QueueOrder order) {
+            this.order = order;
+        }
+
+        @Override
+        public int compareTo(SortingOrder o) {
+            return this.priority.compareTo(o.getPriority());
+        }
+    }
+
+    private IBpmTaskQueryCondition queryConditions;
 
     private int offset;
     private int limit = -1;
@@ -133,9 +173,15 @@ public class BpmTaskQuery {
         return this;
     }
 
-    public BpmTaskQuery orderBy(QueueOrderCondition sortField, QueueOrder sortOrder) {
-        this.sortField = sortField;
-        this.sortOrder = sortOrder;
+    public BpmTaskQuery orderBy(String sortOrderColumnName, Integer priority, QueueOrder sortOrder)
+    {
+        SortingOrder sortingOrder = new SortingOrder();
+        sortingOrder.setOrder(sortOrder);
+        sortingOrder.setColumnName(sortOrderColumnName);
+        sortingOrder.setPriority(priority);
+
+        columnSorting.add(sortingOrder);
+
         return this;
     }
 
@@ -288,11 +334,20 @@ public class BpmTaskQuery {
             sb.append(" LEFT JOIN pt_step_info stepInfo_ ON stepInfo_.taskId = task_.id");
         }
 
+        /* Add additional join conditions */
+        for(SortingOrder sortingOrder: columnSorting)
+            sb.append(queryConditions.getJoinCondition(sortingOrder.getColumnName()));
+
         sb.append(" WHERE 1=1");
 
+        if (owners != null) {
+            sb.append(" AND EXISTS(SELECT 1 FROM pt_process_instance_owners powner WHERE powner.process_id = process.id AND owners IN (:owners))");
+            queryParameters.add(new QueryParameter("owners", owners));
+        }
+
         if (virtualQueues != null && user != null) {
-               sb.append(from(virtualQueues).select(GET_VIRTUAL_QUEUES).toString(" OR ", " AND (", ")"));
-               queryParameters.add(new QueryParameter("user", user));
+            sb.append(from(virtualQueues).select(GET_VIRTUAL_QUEUES).toString(" OR ", " AND (", ")"));
+            queryParameters.add(new QueryParameter("user", user));
         }
 
         if (queues != null) {
@@ -369,47 +424,47 @@ public class BpmTaskQuery {
         }
 
         if (queryType == QueryType.LIST) {
-            sb.append(" ORDER BY ").append(getOrder());
+            sb.append(getOrderCondition());
         }
         String txt = sb.toString();
         log.info(txt);
         return txt;
     }
 
-    private String getOrder() {
-        if (sortField != null) {
-            return getOrderField() + ' ' + getOrderDirection();
+    private String getOrderCondition()
+    {
+
+        if (!columnSorting.isEmpty())
+        {
+            String orderString = " ORDER BY ";
+            int moreConditions = columnSorting.size();
+            Collections.sort(columnSorting);
+
+            for(SortingOrder sortingOrder: columnSorting)
+            {
+                moreConditions--;
+
+                String conditionSql = queryConditions.getSortQuery(sortingOrder.getColumnName());
+                if(conditionSql == null || conditionSql.isEmpty())
+                    continue;
+
+                conditionSql += " " + (sortingOrder.getOrder() == QueueOrder.DESC ? " DESC" : " ASC");
+
+                if(moreConditions > 0)
+                    conditionSql += ", ";
+
+                orderString += conditionSql;
+            }
+            return  orderString;
         }
-        return "task_.createdOn DESC";
+
+
+        return " ORDER BY task_.createdOn DESC ";
     }
 
-    private String getOrderField() {
-        switch (sortField) {
-            case SORT_BY_DATE_ORDER:
-                return "task_.createdOn";
-            case SORT_BY_CREATE_DATE_ORDER:
-                return "process.createdate";
-            case SORT_BY_PROCESS_CODE_ORDER:
-                return "CASE WHEN process.externalKey is not null THEN process.externalKey ELSE process.internalid END";
-            case SORT_BY_PROCESS_STEP_ORDER:
-                return "i18ntext_.shortText";
-            case SORT_BY_PROCESS_NAME_ORDER:
-                return "process.definitionname";
-            case SORT_BY_ASSIGNEE_ORDER:
-                return "task_.actualowner_id";
-            case SORT_BY_CREATOR_ORDER:
-                return "process.creatorLogin";
-            case SORT_BY_STEP_INFO:
-                return "stepInfo_.message";
-            case SORT_BY_PROCESS_BUSINESS_STATUS_ORDER:
-                return "process.business_status";
-            default:
-                throw new RuntimeException("Unhandled order by field " + sortField);
-        }
-    }
-
-    private String getOrderDirection() {
-        return sortOrder == QueueOrder.DESC ? " DESC" : " ASC";
+    public BpmTaskQuery queryConditions(IBpmTaskQueryCondition queryConditions) {
+        this.queryConditions = queryConditions;
+        return this;
     }
 
     private static final F<QueueType,Object> GET_VIRTUAL_QUEUES = new F<QueueType, Object>() {
@@ -465,8 +520,6 @@ public class BpmTaskQuery {
                 ", createdBefore=" + createdBefore +
                 ", createdAfter=" + createdAfter +
                 ", searchExpression='" + searchExpression + '\'' +
-                ", sortField=" + sortField +
-                ", sortOrder=" + sortOrder +
                 ", offset=" + offset +
                 ", limit=" + limit +
                 '}';

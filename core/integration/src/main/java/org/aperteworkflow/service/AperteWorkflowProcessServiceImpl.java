@@ -82,7 +82,7 @@ public class AperteWorkflowProcessServiceImpl implements AperteWorkflowProcessSe
 
 	@Override
 	@WebMethod
-	public BpmTaskBean assignTaskFromQueue(@WebParam(name="queueName")final String queueName,
+	public BpmTaskBean assignTaskFromQueue(@WebParam(name="queueId")final String queueName,
 										   @WebParam(name="userLogin")final String userLogin) {
 		return withContext(new ReturningProcessToolContextCallback<BpmTaskBean>() {
 			@Override
@@ -94,7 +94,7 @@ public class AperteWorkflowProcessServiceImpl implements AperteWorkflowProcessSe
 
 	@Override
 	@WebMethod
-	public BpmTaskBean assignSpecificTaskFromQueue(@WebParam(name="queueName")final String queueName,
+	public BpmTaskBean assignSpecificTaskFromQueue(@WebParam(name="queueId")final String queueName,
 												   @WebParam(name="taskId")final String taskId,
 												   @WebParam(name="userLogin")final String userLogin) {
 		return withContext(new ReturningProcessToolContextCallback<BpmTaskBean>() {

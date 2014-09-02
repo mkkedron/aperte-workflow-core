@@ -6,9 +6,11 @@ import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessToolActionButton;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessToolWidget;
 import pl.net.bluesoft.rnd.processtool.web.controller.IOsgiWebController;
 import pl.net.bluesoft.rnd.processtool.web.domain.IWidgetScriptProvider;
-import pl.net.bluesoft.rnd.processtool.web.view.TasksListViewBeanFactory;
+import pl.net.bluesoft.rnd.processtool.web.view.AbstractTaskListView;
+import pl.net.bluesoft.rnd.processtool.web.view.ITasksListViewBeanFactory;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,14 +61,21 @@ public interface GuiRegistry {
 	void unregisterWebController(String controllerName);
 
     /** Get plugin task view */
-    TasksListViewBeanFactory getTasksListView(String viewName);
+    AbstractTaskListView getTasksListView(String viewName);
 
     /** register new task view */
-    void registerTasksListView(String viewName, TasksListViewBeanFactory view);
+    void registerTasksListView(String viewName, AbstractTaskListView taskListView);
 
     /** Unregister plugin task view */
     void unregisterTasksListView(String viewName);
 
 	/** Get Scripts */
 	String getJavaScripts();
+
+	void registerButtonGenerator(ButtonGenerator buttonGenerator);
+	void unregisterButtonGenerator(ButtonGenerator buttonGenerator);
+	Collection<ButtonGenerator> getButtonGenerators();
+
+    /* Get all queues avaiable to user with given login */
+    List<AbstractTaskListView> getTasksListViews(String currentUserLogin);
 }

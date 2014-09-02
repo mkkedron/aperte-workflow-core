@@ -1,26 +1,28 @@
 package pl.net.bluesoft.rnd.processtool.plugins;
 
+import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
+import org.apache.commons.collections.SetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import pl.net.bluesoft.rnd.processtool.model.UserData;
 import pl.net.bluesoft.rnd.processtool.steps.ProcessToolProcessStep;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessHtmlWidget;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessToolActionButton;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessToolWidget;
+import pl.net.bluesoft.rnd.processtool.usersource.IUserSource;
 import pl.net.bluesoft.rnd.processtool.web.controller.IOsgiWebController;
 import pl.net.bluesoft.rnd.processtool.web.domain.IHtmlTemplateProvider;
 import pl.net.bluesoft.rnd.processtool.web.domain.IWidgetScriptProvider;
-import pl.net.bluesoft.rnd.processtool.web.view.TasksListViewBeanFactory;
+import pl.net.bluesoft.rnd.processtool.web.view.AbstractTaskListView;
+import pl.net.bluesoft.rnd.processtool.web.view.ITasksListViewBeanFactory;
 import pl.net.bluesoft.util.lang.Classes;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -45,12 +47,17 @@ public class GuiRegistryImpl implements GuiRegistry {
 	private final Map<String, ProcessHtmlWidget> htmlWidgets = new HashMap<String, ProcessHtmlWidget>();
 	private final Map<String, IWidgetScriptProvider> widgetScriptProviders = new HashMap<String, IWidgetScriptProvider>();
 	private final Map<String, IOsgiWebController> webControllers = new HashMap<String, IOsgiWebController>();
-    private final Map<String, TasksListViewBeanFactory> tasksListViews = new HashMap<String, TasksListViewBeanFactory>();
+    private final Map<String, AbstractTaskListView> tasksListViews = new HashMap<String, AbstractTaskListView>();
 
-    private String javaScriptContent = "";
+	private final Set<ButtonGenerator> buttonGenerators = new LinkedHashSet<ButtonGenerator>();
+
+	private String javaScriptContent = "";
 
 	@Autowired
 	private IHtmlTemplateProvider templateProvider;
+
+    @Autowired
+    private IUserSource userSource;
 
     @Autowired
     private DefaultListableBeanFactory beanFactory;
@@ -215,20 +222,94 @@ public class GuiRegistryImpl implements GuiRegistry {
 		return decompress(javaScriptContent);
 	}
 
+	@Override
+	public void registerButtonGenerator(ButtonGenerator buttonGenerator) {
+		buttonGenerators.add(buttonGenerator);
+	}
+
+	@Override
+	public void unregisterButtonGenerator(ButtonGenerator buttonGenerator) {
+		buttonGenerators.remove(buttonGenerator);
+	}
+
+	@Override
+	public Collection<ButtonGenerator> getButtonGenerators() {
+		return buttonGenerators;
+	}
+
+
     @Override
-    public TasksListViewBeanFactory getTasksListView(String viewName) {
-        return tasksListViews.get(viewName);
+    public AbstractTaskListView getTasksListView(String viewName)
+    {
+       return tasksListViews.get(viewName);
     }
 
     @Override
-    public void registerTasksListView(String viewName, TasksListViewBeanFactory beanFactory) {
-        tasksListViews.put(viewName, beanFactory);
+    public List<AbstractTaskListView> getTasksListViews(String currentUserLogin)
+    {
+        List<AbstractTaskListView> userViews = new LinkedList<AbstractTaskListView>();
+
+        UserData user = userSource.getUserByLogin(currentUserLogin);
+
+        if(user == null)
+            throw new RuntimeException("No user with given login="+currentUserLogin);
+
+
+        for(AbstractTaskListView taskListView: tasksListViews.values())
+        {
+            boolean userHasPrivilegesToSeeView = false;
+            /* No role is reuqired */
+            if(taskListView.getRoleNames().isEmpty())
+            {
+                userHasPrivilegesToSeeView = true;
+            }
+            /* Has user any of required roles to see view? */
+            else
+            {
+                Set<String> rolesIntercestion = new HashSet<String>(taskListView.getRoleNames());
+                rolesIntercestion.retainAll(user.getRoles());
+                if(!rolesIntercestion.isEmpty())
+                    userHasPrivilegesToSeeView = true;
+            }
+
+            /* User is not privileged to see view, go to the next */
+            if(!userHasPrivilegesToSeeView)
+                continue;
+
+            userViews.add(taskListView);
+        }
+
+        /* Sort by proprity */
+        Collections.sort(userViews);
+
+        return userViews;
+    }
+
+    @Override
+    public void registerTasksListView(String viewName, AbstractTaskListView taskListView) {
+        tasksListViews.put(viewName, taskListView);
+
+        try
+        {
+            InputStream htmlFileStream = taskListView.getContentProvider().getHtmlContent();
+            String htmlBody = CharStreams.toString(new InputStreamReader(htmlFileStream, "UTF-8"));
+
+            templateProvider.addTemplate(viewName, htmlBody);
+        }
+        catch(Exception ex)
+        {
+            throw new RuntimeException("Problem during adding new html template", ex);
+        }
+
         logger.info("Registered tasks list view: " + viewName);
     }
 
     @Override
     public void unregisterTasksListView(String viewName) {
         tasksListViews.remove(viewName);
+
+        templateProvider.removeTemplate(viewName);
+
         logger.info("Unregistered tasks list view: " + viewName);
     }
 
@@ -255,23 +336,6 @@ public class GuiRegistryImpl implements GuiRegistry {
 			throw new RuntimeException("Problem during javascript compressing", ex);
 		}
 	}
-
-//	private static String compress(String string)
-//	{
-//		try
-//		{
-//			ByteArrayOutputStream os = new ByteArrayOutputStream(string.length());
-//			GZIPOutputStream gos = new GZIPOutputStream(os);
-//			gos.write(string.getBytes());
-//			gos.close();
-//			os.close();
-//			return os.toString();
-//		}
-//		catch(IOException ex)
-//		{
-//			throw new RuntimeException("Problem during javascript compressing", ex);
-//		}
-//	}
 
 	private static String decompress(String stringToCompress)
 	{

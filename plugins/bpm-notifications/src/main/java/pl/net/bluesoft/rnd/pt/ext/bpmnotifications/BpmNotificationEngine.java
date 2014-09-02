@@ -360,7 +360,7 @@ public class BpmNotificationEngine implements IBpmNotificationService
 	                	.addTaskData(templateData, task)
 	                	.addProcessData(templateData, pi)
 	                	.addUserToNotifyData(templateData, getRegistry().getUserSource().getUserByLogin(userLogin))
-	                	.addArgumentProvidersData(templateData, cfg, pi)
+                        .addArgumentProvidersData(templateData, cfg.getTemplateArgumentProvider(), pi)
 	                	.addContextAdditionalData(templateData, cfg, bpmSession);
 	                
 	                NotificationData notificationData = new NotificationData();

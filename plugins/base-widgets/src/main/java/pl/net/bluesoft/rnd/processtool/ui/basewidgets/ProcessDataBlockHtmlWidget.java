@@ -4,7 +4,8 @@ import com.vaadin.ui.TextArea;
 import pl.net.bluesoft.rnd.processtool.plugins.IBundleResourceProvider;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessHtmlWidget;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.annotations.*;
-import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileWidgetContentProvider;
+import pl.net.bluesoft.rnd.processtool.ui.widgets.impl.SimpleWidgetDataHandler;
+import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileContentProvider;
 
 @AperteDoc(humanNameKey = "widget.process_data_block_html.name", descriptionKey = "widget.process_data_block.description")
 @ChildrenAllowed(false)
@@ -21,6 +22,7 @@ public class ProcessDataBlockHtmlWidget extends ProcessHtmlWidget {
 
 	public ProcessDataBlockHtmlWidget(IBundleResourceProvider bundleResourceProvider)
 	{
-		setContentProvider(new FileWidgetContentProvider("html-process.html", bundleResourceProvider));
+        addDataHandler(new SimpleWidgetDataHandler());
+		setContentProvider(new FileContentProvider("html-process.html", bundleResourceProvider));
 	}
 }

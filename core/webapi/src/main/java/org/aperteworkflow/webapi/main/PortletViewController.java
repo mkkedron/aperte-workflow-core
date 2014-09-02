@@ -35,6 +35,7 @@ public class PortletViewController extends AbstractMainController<ModelAndView>
 {
     private static final String PORTLET_JSON_RESULT_ROOT_NAME = "result";
     private static final String PORTLET_PARAMTER_TASK_ID = "taskId";
+    private static final String PORTLET_PARAMTER_QUEUE_ID = "queueId";
     private static final String CASE_PORTLET_URL = "casePortletUrl";
 
     private static Logger logger = Logger.getLogger(PortletViewController.class.getName());
@@ -71,9 +72,14 @@ public class PortletViewController extends AbstractMainController<ModelAndView>
 
         /* Start from task view */
         String showTaskId = originalHttpServletRequest.getParameter(PORTLET_PARAMTER_TASK_ID);
+        String queueId = originalHttpServletRequest.getParameter(PORTLET_PARAMTER_QUEUE_ID);
         if (showTaskId != null) {
             Long taskId = Long.parseLong(showTaskId);
             modelView.addObject(EXTERNAL_TASK_ID, taskId);
+        }
+        else if(queueId != null)
+        {
+            modelView.addObject(EXTERNAL_QUEUE_ID, queueId);
         }
 
         modelView.addObject(CASE_PORTLET_URL, settingsProvider.getSetting("case.portlet.url"));
@@ -172,6 +178,13 @@ public class PortletViewController extends AbstractMainController<ModelAndView>
         HttpServletRequest originalHttpServletRequest = getOriginalHttpServletRequest(request);
         HttpServletResponse httpServletResponse = portalUserSource.getHttpServletResponse(response);
         taskViewController.loadTask(originalHttpServletRequest, httpServletResponse);
+    }
+
+    @ResourceMapping("loadQueue")
+    public void loadQueue(ResourceRequest request, ResourceResponse response) throws IOException, ServletException {
+        HttpServletRequest originalHttpServletRequest = getOriginalHttpServletRequest(request);
+        HttpServletResponse httpServletResponse = portalUserSource.getHttpServletResponse(response);
+        processesListController.loadQueue(originalHttpServletRequest, httpServletResponse);
     }
 
     @ResourceMapping("performAction")

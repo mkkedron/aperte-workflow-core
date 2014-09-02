@@ -12,6 +12,7 @@
 <!--<h2>Aperte Workflow Maginificient Activities</h2>-->
 <%@include file="windowManager.jsp" %>
 <%@include file="utils/apertedatatable.jsp" %>
+<%@include file="utils/queuemanager.jsp" %>
 
 <c:if test="${aperteUser.login!=null}">
 
@@ -35,7 +36,9 @@
  
   <script type="text/javascript">
     var dispatcherPortlet = '<portlet:resourceURL id="dispatcher"/>';
-  
+	var queueListPortlet = '<portlet:resourceURL id="loadQueue"/>';
+    var processListPortlet = '<portlet:resourceURL id="loadProcessesList"/>';
+	
   	$(document).ready(function()
 	{
 		// bootstrap moodals fix for ie7
@@ -63,14 +66,4 @@
 		windowManager.clearProcessView();
 		
 	});
-	
-
-  
-  
-
-	
-
- 
-	
- 
  </script>

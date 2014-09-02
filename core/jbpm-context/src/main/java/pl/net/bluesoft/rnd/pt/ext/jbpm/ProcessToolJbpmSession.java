@@ -21,8 +21,6 @@ import pl.net.bluesoft.rnd.processtool.bpm.diagram.ProcessDiagram;
 import pl.net.bluesoft.rnd.processtool.bpm.diagram.Transition;
 import pl.net.bluesoft.rnd.processtool.bpm.exception.ProcessToolSecurityException;
 import pl.net.bluesoft.rnd.processtool.bpm.impl.AbstractProcessToolSession;
-import pl.net.bluesoft.rnd.processtool.di.ObjectFactory;
-import pl.net.bluesoft.rnd.processtool.di.annotations.AutoInject;
 import pl.net.bluesoft.rnd.processtool.hibernate.ResultsPageWrapper;
 import pl.net.bluesoft.rnd.processtool.model.*;
 import pl.net.bluesoft.rnd.processtool.model.config.ProcessDefinitionConfig;
@@ -36,7 +34,7 @@ import pl.net.bluesoft.rnd.processtool.model.token.AccessToken;
 import pl.net.bluesoft.rnd.processtool.plugins.DataRegistry;
 import pl.net.bluesoft.rnd.processtool.token.IAccessTokenFactory;
 import pl.net.bluesoft.rnd.processtool.token.ITokenService;
-import pl.net.bluesoft.rnd.processtool.usersource.IUserSource;
+import pl.net.bluesoft.rnd.processtool.web.view.*;
 import pl.net.bluesoft.rnd.pt.ext.jbpm.service.JbpmService;
 import pl.net.bluesoft.rnd.pt.ext.jbpm.service.query.BpmTaskNotificationQuery;
 import pl.net.bluesoft.rnd.pt.ext.jbpm.service.query.BpmTaskQuery;
@@ -56,7 +54,6 @@ import java.util.*;
 import java.util.logging.Level;
 
 import static pl.net.bluesoft.rnd.processtool.model.nonpersistent.BpmTaskBean.getTaskIds;
-import static pl.net.bluesoft.rnd.processtool.plugins.ProcessToolRegistry.Util.getRegistry;
 import static pl.net.bluesoft.rnd.util.PlaceholderUtil.expand;
 import static pl.net.bluesoft.rnd.util.PlaceholderUtil.getUsedPlaceholderNames;
 import static pl.net.bluesoft.util.lang.FormatUtil.nvl;
@@ -101,26 +98,36 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 		return new ProcessToolJbpmSession(userLogin, roleNames, this.userLogin);
 	}
 
-	@Override
-	public StartProcessResult startProcess(String processDefinitionId, String externalKey, String source) {
-		ProcessDefinitionConfig config = getContext().getProcessDefinitionDAO().getActiveConfigurationByKey(processDefinitionId);
+    @Override
+    public StartProcessResult startProcess(String processDefinitionId, String externalKey, String source) {
+        return startProcess(processDefinitionId, externalKey, source, null);
+    }
 
-		if (!config.isEnabled()) {
-			throw new IllegalArgumentException("Process definition has been disabled!");
-		}
+    @Override
+    public StartProcessResult startProcess(String processDefinitionId, String externalKey, String source, Map<String, Object> simpleAttributes) {
+        ProcessDefinitionConfig config = getContext().getProcessDefinitionDAO().getActiveConfigurationByKey(processDefinitionId);
 
-		startProcessParams = new StartProcessParams(config, externalKey, source, userLogin);
+        if (!config.isEnabled()) {
+            throw new IllegalArgumentException("Process definition has been disabled!");
+        }
 
-		try {
-			getJbpmService().startProcess(config.getBpmProcessId(), getInitialParams());
-			generateExternalKey(startProcessParams.newProcessInstance);
-			generateStepInfo(startProcessParams.createdTasks);
-			return new JbpmStartProcessResult(startProcessParams.newProcessInstance, startProcessParams.createdTasksForCurrentUser);
-		}
-		finally {
-			startProcessParams = null;
-		}
-	}
+        Map<String, Object> initialParams = getInitialParams();
+        if(simpleAttributes != null){
+            initialParams.putAll(simpleAttributes);
+        }
+
+        startProcessParams = new StartProcessParams(config, externalKey, source, userLogin, initialParams);
+
+        try {
+            getJbpmService().startProcess(config.getBpmProcessId(), initialParams);
+            generateExternalKey(startProcessParams.newProcessInstance);
+            generateStepInfo(startProcessParams.createdTasks);
+            return new JbpmStartProcessResult(startProcessParams.newProcessInstance, startProcessParams.createdTasksForCurrentUser);
+        }
+        finally {
+            startProcessParams = null;
+        }
+    }
 
 	private static class JbpmStartProcessResult implements StartProcessResult {
 		private final ProcessInstance processInstance;
@@ -359,13 +366,14 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 	}
 
 	@Override
-	public int getTasksCount(String userLogin, QueueType... queueTypes) {
-		return getTasksCount(userLogin, Arrays.asList(queueTypes));
-	}
+	public int getTasksCount(ProcessInstanceFilter queueFilter)
+    {
 
-	@Override
-	public int getTasksCount(String userLogin, Collection<QueueType> queueTypes) {
-		return new BpmTaskQuery(dataRegistry.getHibernateDialect()).user(userLogin).virtualQueues(queueTypes).count();
+        return new BpmTaskQuery(dataRegistry.getHibernateDialect())
+                .user(queueFilter.getFilterOwnerLogin())
+                .virtualQueues(queueFilter.getQueueTypes())
+                .queryConditions(new BpmTaskBeanFactory().getBpmTaskQueryCondition())
+                .count();
 	}
 
 	@Override
@@ -486,28 +494,33 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 
 		BpmTaskQuery taskFilterQuery = new BpmTaskQuery(dataRegistry.getHibernateDialect());
 
+        if(filter.getViewName()==null || filter.getViewName().isEmpty())
+            taskFilterQuery.queryConditions(new BpmTaskBeanFactory().getBpmTaskQueryCondition());
+        else
+        {
+            AbstractTaskListView taskView = registry.getGuiRegistry().getTasksListView(filter.getViewName());
+            /* Get factory class by process instance */
+            ITasksListViewBeanFactory factory = taskView.getProcessFactory(filter.getProcessBpmKey());
+            taskFilterQuery.queryConditions(factory.getBpmTaskQueryCondition());
+        }
+
+        if (!filter.getQueueTypes().isEmpty()) {
+            taskFilterQuery.virtualQueues(filter.getQueueTypes());
+        }
+
    		/* Queues filter do not have owner */
 		if (filter.getFilterOwnerLogin() != null) {
 			taskFilterQuery.user(filter.getFilterOwnerLogin());
 		}
 
-		if (!filter.getQueueTypes().isEmpty()) {
-			taskFilterQuery.virtualQueues(filter.getQueueTypes());
-		}
+        if (!filter.getOwnerLogins().isEmpty()) {
+            taskFilterQuery.owners(filter.getOwnerLogins());
+        }
+
 
    		/* Add condition for task names if any exists */
 		if (!filter.getTaskNames().isEmpty()) {
 			taskFilterQuery.taskNames(filter.getTaskNames());
-		}
-
-   		/* Add conidtion for created before date */
-		if (filter.getCreatedBefore() != null) {
-			taskFilterQuery.createdBefore(filter.getCreatedBefore());
-		}
-
-   		/* Add conidtion for created after date */
-		if (filter.getCreatedAfter() != null) {
-			taskFilterQuery.createdAfter(filter.getCreatedAfter());
 		}
 
 		if (!filter.getQueues().isEmpty()) {
@@ -518,15 +531,12 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 			taskFilterQuery.excludeDefinitionIds(getContext().getProcessDefinitionDAO()
 					.getNotPermittedDefinitionIds(ProcessToolBpmConstants.PRIVILEDGE_SEARCH, getRoleNames()));
 		}
-		
-		if (!filter.getOwnerLogins().isEmpty()) {
-			taskFilterQuery.owners(filter.getOwnerLogins());
-		}
 
 		taskFilterQuery.processBpmKey(filter.getProcessBpmKey());
 		taskFilterQuery.searchExpression(filter.getExpression(), filter.getLocale());
 
-		taskFilterQuery.orderBy(filter.getSortOrderCondition(), filter.getSortOrder());
+        for(ProcessInstanceFilterSortingColumn sortingColumn: filter.getSortingColumns())
+		    taskFilterQuery.orderBy(sortingColumn.getColumnName(), sortingColumn.getPriority(),sortingColumn.getOrder());
 
 		return taskFilterQuery;
 	}
@@ -632,6 +642,20 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 		save(pi);
 		log.severe("User: " + userLogin + " has reassigned task " + toJbpmTaskId(bpmTask) + " for process: " + pi.getInternalId() + " to user: " + userLogin);
 	}
+
+    @Override
+    public void adminForwardProcessTask(String taskId, String userLogin, String targetUserLogin) {
+        BpmTask bpmTask = getTaskData(taskId);
+        ProcessInstance pi = bpmTask.getProcessInstance();
+
+        log.severe("User: " + userLogin + " attempting to forward task " + toJbpmTaskId(bpmTask) + " for process: " + pi.getInternalId() + " to user: " + userLogin);
+
+        getJbpmService().forwardTask(toJbpmTaskId(bpmTask), userLogin, targetUserLogin);
+
+        log.info("Process.running:" + pi.isProcessRunning());
+        save(pi);
+        log.severe("User: " + userLogin + " has reassigned task " + toJbpmTaskId(bpmTask) + " for process: " + pi.getInternalId() + " to user: " + userLogin);
+    }
 
 	@Override
 	public void adminCompleteTask(String taskId, String actionName) {
@@ -774,9 +798,6 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 	@Override
 	public ProcessDiagram getProcessDiagram(BpmTask task, I18NSource i18NSource) {
 		byte[] bytes = fetchProcessResource(task.getProcessDefinition(), ProcessResourceNames.DEFINITION);
-        if(bytes == null)
-            return null;
-
 		ProcessDiagramParser parser = new ProcessDiagramParser();
 		ProcessDiagram diagram = parser.parse(new ByteArrayInputStream(bytes));
 
@@ -904,7 +925,7 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 	public void taskCreated(TaskUserEvent event) {
 		BpmTask task = getBpmTask(getJbpmService().getTask(event.getTaskId()));
 
-		captureTask(task, task.getPotentialOwners().contains(userLogin));
+		captureTask(task, false);
 		refreshDataForNativeQuery();
 	}
 
@@ -1199,13 +1220,16 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 		public final String externalKey;
 		public final String source;
 		public final String creator;
+        private Map<String, Object> initialParams;
 		public ProcessInstance newProcessInstance;
 
-		public StartProcessParams(ProcessDefinitionConfig config, String externalKey, String source, String creator) {
+		public StartProcessParams(ProcessDefinitionConfig config, String externalKey, String source, String creator,
+                                  Map<String, Object> initialParams) {
 			this.config = config;
 			this.externalKey = externalKey;
 			this.source = source;
 			this.creator = creator;
+            this.initialParams = initialParams;
 		}
 
 		public ProcessInstance createFromParams(org.drools.runtime.process.ProcessInstance jbpmProcessInstance, ProcessInstance parentProcessInstance) {
@@ -1223,6 +1247,13 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 			newProcessInstance.setSimpleAttribute("creator", creator);
 			newProcessInstance.setSimpleAttribute("creatorName", userSource.getUserByLogin(creator).getRealName());
 			newProcessInstance.setSimpleAttribute("source", source);
+
+            if (initialParams != null) {
+                for (Map.Entry<String, Object> entry : initialParams.entrySet()) {
+                    String value = entry.getValue() != null ? String.valueOf(entry.getValue()) : null;
+                    newProcessInstance.setSimpleAttribute(entry.getKey(), value);
+                }
+            }
 
 			if (parentProcessInstance != null) {
 				newProcessInstance.setParent(parentProcessInstance);
@@ -1275,7 +1306,6 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 			if (assignedToCurrentUser) {
 				createdTasksForCurrentUser.add(task);
 			}
-
 			createdTasks.add(task);
 		}
 	}
@@ -1296,7 +1326,7 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 				String creator = parentProcessInstance.getCreatorLogin();
 
 				StartProcessParams params = new StartProcessParams(
-						config, null, "parent_process", creator
+						config, null, "parent_process", creator, null
 				);
 				newProcessInstance = params.createFromParams(jbpmProcessInstance, parentProcessInstance);
 
@@ -1389,7 +1419,12 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 			return processInstance;
 		}
 
-		@Override
+        @Override
+        public String getExternalKey() {
+            return getProcessInstance().getExternalKey();
+        }
+
+        @Override
 		public String getInternalTaskId() {
 			return toAwfTaskId(task.getId());
 		}

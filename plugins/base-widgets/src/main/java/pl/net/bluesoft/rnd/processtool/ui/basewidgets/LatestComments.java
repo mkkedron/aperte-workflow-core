@@ -5,7 +5,7 @@ import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessHtmlWidget;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.annotations.AliasName;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.annotations.AperteDoc;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.annotations.AutoWiredProperty;
-import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileWidgetContentProvider;
+import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileContentProvider;
 
 /**
  * @author: "mpawlak@bluesoft.net.pl"
@@ -19,6 +19,6 @@ public class LatestComments extends ProcessHtmlWidget
 
     public LatestComments(IBundleResourceProvider bundleResourceProvider)
     {
-        setContentProvider(new FileWidgetContentProvider("latest-process-comments.html", bundleResourceProvider));
+        setContentProvider(new FileContentProvider("latest-process-comments.html", bundleResourceProvider));
     }
 }

@@ -4,7 +4,8 @@ import org.aperteworkflow.files.widget.dataprovider.FilesRepositoryDataProvider;
 import pl.net.bluesoft.rnd.processtool.plugins.IBundleResourceProvider;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessHtmlWidget;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.annotations.*;
-import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileWidgetContentProvider;
+import pl.net.bluesoft.rnd.processtool.ui.widgets.impl.SimpleWidgetDataHandler;
+import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileContentProvider;
 
 /**
  * History process widget.
@@ -14,13 +15,25 @@ import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileWidgetContentProvide
  * @author mpawlak@bluesoft.net.pl
  */
 @AliasName(name = "FileRepositoryWidget", type = WidgetType.Html)
-@WidgetGroup("demand-process")
+@WidgetGroup("common")
 @AperteDoc(humanNameKey = "widget.file.repository.name", descriptionKey = "widget.file.repository.description")
 @ChildrenAllowed(false)
-public class FileRepositoryWidget extends ProcessHtmlWidget {
+public class FileRepositoryWidget extends ProcessHtmlWidget
+{
+    public static enum Mode{
+        /** Simple mode */
+        STANDARD,
+        /** Add additional column "send with mail" */
+        MAIL
+    };
+
+    @AutoWiredProperty
+    private String mode;
+
     public FileRepositoryWidget(IBundleResourceProvider bundleResourceProvider) {
-        setContentProvider(new FileWidgetContentProvider("files-repository-widget.html", bundleResourceProvider));
+        setContentProvider(new FileContentProvider("files-repository-widget.html", bundleResourceProvider));
         addDataProvider(
                 new FilesRepositoryDataProvider());
+        addDataHandler(new SimpleWidgetDataHandler());
     }
 }

@@ -1,12 +1,12 @@
 package pl.net.bluesoft.rnd.processtool.plugins.osgi.beans;
 
-import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileWidgetContentProvider;
+import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileContentProvider;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.impl.MockWidgetValidator;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.impl.SimpleWidgetDataHandler;
 
 public class HtmlFileNameBean 
 {
-	public static final String FILE_PROVIDER_CLASS = FileWidgetContentProvider.class.getName();
+	public static final String FILE_PROVIDER_CLASS = FileContentProvider.class.getName();
 	public static final String DATA_HANDLER_CLASS = SimpleWidgetDataHandler.class.getName();
 	public static final String VALIDATOR_CLASS = MockWidgetValidator.class.getName();
 	

@@ -10,6 +10,7 @@ import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 import pl.net.bluesoft.rnd.processtool.ProcessToolContext;
 import pl.net.bluesoft.rnd.processtool.ReturningProcessToolContextCallback;
 import pl.net.bluesoft.rnd.processtool.dao.OperationLockDAO;
+import pl.net.bluesoft.rnd.processtool.dao.OperationLockDAOImpl;
 import pl.net.bluesoft.rnd.processtool.hibernate.lock.exception.AquireOperationLockException;
 import pl.net.bluesoft.rnd.processtool.model.OperationLock;
 import pl.net.bluesoft.rnd.processtool.model.OperationLockMode;
@@ -57,7 +58,7 @@ public class OperationLockFacade implements ILockFacade
             connection.setAutoCommit(false);
 
             try {
-                OperationLockDAO lockDAO = dataRegistry.getOperationLockDAO(connection);
+                OperationLockDAO lockDAO = new OperationLockDAOImpl(connection);
 
                 lock = acquireLock(options, lockDAO);
                 connection.commit();
@@ -78,7 +79,7 @@ public class OperationLockFacade implements ILockFacade
         }
         catch(Exception ex)
         {
-            logger.log(Level.SEVERE, "Problem during acquring lock for Teta Sync", ex);
+            logger.log(Level.SEVERE, "Problem during acquring lock", ex);
             return null;
         }
         finally
@@ -91,7 +92,7 @@ public class OperationLockFacade implements ILockFacade
                     connection.setAutoCommit(false);
 
                     try {
-                        OperationLockDAO lockDAO = dataRegistry.getOperationLockDAO(connection);
+                        OperationLockDAO lockDAO = new OperationLockDAOImpl(connection);
                         lockDAO.removeLock(lock);
                         connection.commit();
                     }
@@ -103,7 +104,7 @@ public class OperationLockFacade implements ILockFacade
                         connection.close();
                     }
                 } catch (SQLException e) {
-                    logger.log(Level.SEVERE, "Problem during acquring lock for Teta Sync", e);
+                    logger.log(Level.SEVERE, "Problem during acquring lock", e);
                     return null;
                 }
 

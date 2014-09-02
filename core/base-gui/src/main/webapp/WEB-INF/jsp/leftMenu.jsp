@@ -208,33 +208,33 @@
 	{
 		var layoutId = 'queue-view-' + processRow.queueId+'-'+userLogin;
 		var innerDivId = processRow.queueId+'-'+userLogin;
-		var tip = "";
-		
-		if (processRow.queueName === 'activity.created.all.tasks'){
-			tip = 'Zadania, które są przydzielone do mnie i czekają na moją akcję';
-		} else if (processRow.queueName === 'activity.created.tasks'){
-			tip = 'Zadania z procesów stworzonych przeze mnie, przydzielone aktualnie do innych osób, np. w trakcie akceptacji';
-		}
+		var tip = processRow.queueDesc;
 
-		$( "<li>", { id : layoutId, "class": "list-group-item list-group-item-left-menu", "data-queue-name": processRow.queueName, "data-user-login" : userLogin, "data-queue-type" : "process", "data-queue-desc" : processRow.queueDesc} )
+		$( "<li>", { id : layoutId, "class": "list-group-item list-group-item-left-menu", "data-queue-id": processRow.queueId, "data-user-login" : userLogin, "data-queue-type" : "process", "data-queue-desc" : processRow.queueDesc} )
 		.appendTo( '#'+accordionID );
 		
 		$(document).ready(function () {
 			$('[name="tooltip"]').tooltip();
 			$("#"+layoutId).on("click", function () {
-				showQueue( 
-						$(this).attr('data-queue-name'),
-						$(this).attr('data-queue-type'),
-						$(this).attr('data-user-login'),
-						$(this).attr('data-queue-desc'));
+				loadProcessListView( 
+						$(this).attr('data-queue-id'),
+						$(this).attr('data-user-login'));
+
 			});
 		});
 		
 		$( "<span>", { "class": "badge badge-queue-link", text: processRow.queueSize} )
 		.appendTo( '#'+layoutId  );
-		$( "<div>", { id : 'link-'+processRow.queueId+'-'+accordionID, "name": "tooltip", "title": tip, "class": "queue-list-link", text: processRow.queueDesc } )
+		$( "<div>", { id : 'link-'+processRow.queueId+'-'+accordionID, "name": "tooltip", "title": tip, "class": "queue-list-link", text: processRow.queueName } )
 		.appendTo( '#'+layoutId );
 		$('[name="tooltip"]').tooltip();
+		
+		// Check if there is any defauly queueId
+		if(queueViewManager.defaultQueueId == '')
+		{
+			queueViewManager.defaultQueueId = processRow.queueId;
+			loadProcessListView(processRow.queueId, userLogin);
+		}
 
 	}
 
@@ -249,11 +249,9 @@
 		
 		$(document).ready(function () {
 			$("#"+layoutId).on("click", function () {
-				showQueue( 
-						$(this).attr('data-queue-name'),
-						$(this).attr('data-queue-type'),
-						$(this).attr('data-user-login'),
-						$(this).attr('data-queue-desc'));
+				loadProcessListView( 
+						$(this).attr('data-queue-id'),
+						$(this).attr('data-user-login'));
 			});
 		});
 		
@@ -275,12 +273,58 @@
 		$('#'+id).attr('class','alert alert-info queue-list-row-process');
 	}
 	
-	function showQueue(newQueueName, queueType, ownerLogin, queueDesc)
+	function showQueue(queueId, queueType, ownerLogin, queueDesc)
 	{
 		reloadQueuesLoopTimer.stop();
 		reloadQueuesLoopTimer.play(true);
 		reloadQueues();
-		queueViewManager.loadQueue(newQueueName, queueType, ownerLogin, queueDesc);
+		queueViewManager.loadQueue(queueId, queueType, ownerLogin, queueDesc);
+	}
+	
+	function loadProcessListView(queueId, ownerLogin)
+	{
+		windowManager.changeUrl('?queueId='+queueId);
+		queueViewManager.removeCurrentQueue();
+		windowManager.showLoadingScreen();
+		var widgetJson = $.post('<portlet:resourceURL id="loadQueue"/>',
+		{
+			"queueId": queueId,
+			"ownerLogin": ownerLogin
+		})
+		.done(function(data) 
+		{
+			clearAlerts();
+			windowManager.showProcessData();
+			$('#process-data-view').empty();
+			$("#process-data-view").append(data);
+			checkIfViewIsLoaded();
+		})
+		.fail(function(data, textStatus, errorThrown) {
+			
+		});
+	}
+
+	
+	function loadProcessView(taskId)
+	{
+		windowManager.changeUrl('?taskId='+taskId);
+		windowManager.showLoadingScreen();
+
+		var widgetJson = $.post('<portlet:resourceURL id="loadTask"/>',
+		{
+			"taskId": taskId
+		})
+		.done(function(data) 
+		{
+			clearAlerts();
+			windowManager.showProcessData();
+			$('#process-data-view').empty();
+			$("#process-data-view").append(data);
+			checkIfViewIsLoaded();
+		})
+		.fail(function(data, textStatus, errorThrown) {
+			
+		});
 	}
  
  </script>

@@ -12,6 +12,9 @@ public abstract class TasksListViewBean extends AbstractResultBean {
     private String queueName;
     private Date taskAssigneDate;
     private Boolean userCanClaim = false;
+    private String taskId;
+    private Date creationDate;
+    private String creator;
 
     public String getQueueName() {
         return queueName;
@@ -35,5 +38,29 @@ public abstract class TasksListViewBean extends AbstractResultBean {
 
     public void setTaskAssigneDate(Date taskAssigneDate) {
         this.taskAssigneDate = taskAssigneDate;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
     }
 }

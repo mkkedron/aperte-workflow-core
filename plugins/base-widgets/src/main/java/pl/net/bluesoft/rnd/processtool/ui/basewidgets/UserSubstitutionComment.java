@@ -5,7 +5,7 @@ import pl.net.bluesoft.rnd.processtool.ui.basewidgets.validator.SubstitutionComm
 import pl.net.bluesoft.rnd.processtool.ui.widgets.ProcessHtmlWidget;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.annotations.AliasName;
 import pl.net.bluesoft.rnd.processtool.ui.widgets.impl.SimpleWidgetDataHandler;
-import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileWidgetContentProvider;
+import pl.net.bluesoft.rnd.processtool.web.widgets.impl.FileContentProvider;
 
 /**
  * @author: "mpawlak@bluesoft.net.pl"
@@ -15,8 +15,8 @@ public class UserSubstitutionComment extends ProcessHtmlWidget
 {
     public UserSubstitutionComment(IBundleResourceProvider bundleResourceProvider)
     {
-        setContentProvider(new FileWidgetContentProvider("substitution-comments.html", bundleResourceProvider));
+        setContentProvider(new FileContentProvider("substitution-comments.html", bundleResourceProvider));
         setValidator(new SubstitutionCommentValidator());
-        setDataHandler(new SimpleWidgetDataHandler());
+        addDataHandler(new SimpleWidgetDataHandler());
     }
 }

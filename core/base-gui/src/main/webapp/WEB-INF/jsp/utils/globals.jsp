@@ -6,5 +6,5 @@
 
 <script type="text/javascript">
 	var dispatcherPortlet = '<portlet:resourceURL id="dispatcher"/>';
-   
+    var queueListPortlet = '<portlet:resourceURL id="loadQueue"/>';
 </script>

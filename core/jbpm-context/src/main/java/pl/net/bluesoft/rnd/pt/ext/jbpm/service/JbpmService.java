@@ -27,9 +27,7 @@ import org.jbpm.task.identity.UserGroupCallbackManager;
 import org.jbpm.task.service.ContentData;
 import org.jbpm.task.service.local.LocalTaskService;
 import org.jbpm.task.utils.OnErrorAction;
-import org.springframework.beans.factory.annotation.Autowired;
 import pl.net.bluesoft.rnd.processtool.IProcessToolSettings;
-import pl.net.bluesoft.rnd.processtool.ISettingsProvider;
 import pl.net.bluesoft.rnd.pt.ext.jbpm.JbpmStepAction;
 import pl.net.bluesoft.rnd.pt.ext.jbpm.ProcessResourceNames;
 import pl.net.bluesoft.rnd.pt.ext.jbpm.service.query.TaskQuery;
@@ -260,7 +258,14 @@ public class JbpmService implements ProcessEventListener, TaskEventListener {
 
     public void claimTask(long taskId, String userLogin) {
         log.info("JBPMService claimTask: " +  taskId + ", userLogin: " + userLogin);
+
         getSessionTaskService().claim(taskId, userLogin);
+    }
+
+    public void forwardTask(long taskId, String userLogin, String targetUserLogin) {
+        log.info("JBPMService forwardTask: " +  taskId + ", userLogin: " + userLogin);
+
+        getSessionTaskService().forward(taskId, userLogin, targetUserLogin);
     }
 
     public void endTask(long taskId, String userLogin, ContentData outputData, boolean startNeeded) {
