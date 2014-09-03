@@ -41,23 +41,23 @@ public class CommentDataHandler implements IWidgetDataHandler {
         }
     }
 
-    private List<ProcessComment> convert(List<ProcessCommentBean> list, IAttributesProvider provider) {
+    private List<ProcessComment> convert(List<ProcessCommentBean> list, IAttributesConsumer consumer) {
         List<ProcessComment> result = new ArrayList<ProcessComment>();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         for (ProcessCommentBean bean : list) {
-            result.add(convert(bean, (BpmTask) provider, format));
+            result.add(convert(bean,  consumer, format));
         }
         return result;
     }
 
-    private ProcessComment convert(ProcessCommentBean bean, BpmTask task, SimpleDateFormat format) {
+    private ProcessComment convert(ProcessCommentBean bean, IAttributesConsumer consumer, SimpleDateFormat format) {
         ProcessComment comment = new ProcessComment();
         comment.setAuthorLogin(bean.getAuthorLogin());
         comment.setAuthorFullName(bean.getAuthorFullName());
         comment.setBody(bean.getBody());
-        comment.setProcessState(task.getTaskName());
-        comment.setProcessInstance(task.getProcessInstance());
+        comment.setProcessState(consumer.getProcessInstance().getBusinessStatus());
+        comment.setProcessInstance(consumer.getProcessInstance());
         try {
             comment.setCreateTime(format.parse(bean.getCreateDate()));
         } catch (ParseException e) {

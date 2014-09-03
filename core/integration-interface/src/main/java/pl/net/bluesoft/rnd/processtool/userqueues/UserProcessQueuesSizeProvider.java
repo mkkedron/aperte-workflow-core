@@ -112,6 +112,10 @@ public class UserProcessQueuesSizeProvider
 
         for(AbstractTaskListView listView:listViews)
         {
+            /* Ignore custom queues */
+            if(!listView.getQueueType().equals(AbstractTaskListView.QueueTypes.PROCESS))
+                continue;
+
             Map<String, Object> listViewParameters = new HashMap<String, Object>();
             listViewParameters.put(AbstractTaskListView.PARAMETER_USER_LOGIN, userLogin);
 
@@ -123,7 +127,7 @@ public class UserProcessQueuesSizeProvider
             String queueName = messageSource.getMessage(listView.getQueueDisplayedName());
             String queueDesc = messageSource.getMessage(listView.getQueueDisplayedDesc());
 
-            userQueueSize.addProcessListSize(queueName, queueId, queueDesc, filteredQueueSize);
+            userQueueSize.addQueueSize(queueName, queueId, queueDesc, filteredQueueSize);
         }
 		
 		/* Create organized tasks filters */
@@ -138,16 +142,17 @@ public class UserProcessQueuesSizeProvider
 		{
 			int processCount = processQueue.getProcessCount();
 			
-			String queueId = QueuesNameUtil.getQueueProcessQueueId(processQueue.getName());
+			String queueId = processQueue.getName();
 
             AbstractTaskListView listView = getCustomQueue(listViews, queueId);
             if(listView == null)
                 listView = processToolRegistry.getGuiRegistry().getTasksListView(STANDARD_PROCESS_QUEUE_ID);
 
 
-			String queueDesc = messageSource.getMessage(processQueue.getDescription());
+            String queueName = messageSource.getMessage(listView.getQueueDisplayedName());
+            String queueDesc = messageSource.getMessage(listView.getQueueDisplayedDesc());
 			
-			userQueueSize.addQueueSize(processQueue.getName(), queueId, queueDesc, processCount);
+			userQueueSize.addQueueSize(queueName, queueId, queueDesc, processCount);
             userQueueSize.setActiveTasks(userQueueSize.getActiveTasks() + processCount);
 		}
 		
@@ -175,28 +180,15 @@ public class UserProcessQueuesSizeProvider
 		private static final long serialVersionUID = -6144244162774763817L;
 		 
 		private String userLogin;
-		private Collection<UserQueueDTO> processesList;
 		private Collection<UserQueueDTO> queuesList;
 		private Integer activeTasks = 0;
 		
 		public UsersQueuesDTO(String userLogin) 
 		{
 			this.userLogin = userLogin;
-			this.processesList = new LinkedHashSet<UserQueueDTO>();
 			this.queuesList = new LinkedHashSet<UserQueueDTO>();
 		}
-		
-		public void addProcessListSize(String listName, String listId, String listDesc, Integer queueSize)
-		{
-			UserQueueDTO userQueue = new UserQueueDTO();
-			userQueue.setQueueName(listName);
-			userQueue.setQueueId(listId);
-			userQueue.setQueueSize(queueSize);
-			userQueue.setQueueDesc(listDesc);
-			
-			this.processesList.add(userQueue);
-		}
-		
+
 		public void addQueueSize(String queueName, String queueId, String queueDesc, Integer queueSize)
 		{
 			UserQueueDTO userQueue = new UserQueueDTO();
@@ -212,9 +204,6 @@ public class UserProcessQueuesSizeProvider
 			return userLogin;
 		}
 
-		public Collection<UserQueueDTO> getProcessesList() {
-			return processesList;
-		}
 
 		public Collection<UserQueueDTO> getQueuesList() {
 			return queuesList;

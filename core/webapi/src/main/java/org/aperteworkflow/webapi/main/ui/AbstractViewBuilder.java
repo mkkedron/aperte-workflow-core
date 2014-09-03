@@ -100,7 +100,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
             WidgetHierarchyBean childBean = new WidgetHierarchyBean()
                     .setParent(widgetsNode)
                     .setWidget(widget)
-                    .setProcessInstance(getViewedObject().getProcessInstance())
+                    .setAttributesProvider(getViewedObject().getProcessInstance())
                     .setForcePrivileges(false)
                     .setPrivileges(new ArrayList<String>());
 
@@ -112,10 +112,11 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
 
     protected void buildWidget(final WidgetHierarchyBean widgetHierarchyBean) {
         IStateWidget widget = widgetHierarchyBean.getWidget();
-        ProcessInstance processInstance = widgetHierarchyBean.getProcessInstance();
-        if(processInstance != null) {
-            Hibernate.initialize(processInstance.getProcessAttributes());
-            Hibernate.initialize(processInstance.getProcessSimpleAttributes());
+        IAttributesProvider attributesProvider = widgetHierarchyBean.getAttributesProvider();
+        if(attributesProvider != null && attributesProvider.getProcessInstance() != null) {
+            Hibernate.initialize(attributesProvider.getProcessInstance().getProcessAttributes());
+            Hibernate.initialize(attributesProvider.getProcessInstance().getProcessSimpleAttributes());
+            Hibernate.initialize(attributesProvider.getProcessInstance().getRootProcessInstance());
         }
         Element parent = widgetHierarchyBean.getParent();
 
@@ -145,7 +146,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
             Boolean forcePrivileges = Boolean.parseBoolean(forcePrivilegesAttribute.getValue());
 
             String attributeName = processStateConfigurationIdAttribute.getValue();
-            String processStateConfigurationId = processInstance.getRootProcessInstance().getSimpleAttributeValue(attributeName);
+            String processStateConfigurationId = attributesProvider.getProcessInstance().getRootProcessInstance().getSimpleAttributeValue(attributeName);
 
             ProcessStateConfiguration processStateConfiguration =
                     ctx.getProcessDefinitionDAO().getCachedProcessStateConfiguration(Long.parseLong(processStateConfigurationId));
@@ -159,7 +160,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
                 WidgetHierarchyBean childBean = new WidgetHierarchyBean()
                         .setParent(divContentNode)
                         .setWidget(childWidget)
-                        .setProcessInstance(processInstance.getRootProcessInstance())
+                        .setAttributesProvider(attributesProvider.getProcessInstance().getRootProcessInstance())
                         .setForcePrivileges(forcePrivileges)
                         .setPrivileges(getPrivileges(widget));
 
@@ -218,7 +219,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
                 WidgetHierarchyBean childBean = new WidgetHierarchyBean()
                         .setParent(divTabContentNode)
                         .setWidget(child)
-                        .setProcessInstance(processInstance)
+                        .setAttributesProvider(attributesProvider)
                         .setForcePrivileges(widgetHierarchyBean.isForcePrivileges())
                         .setPrivileges(widgetHierarchyBean.getPrivileges());
 
@@ -235,7 +236,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
                 WidgetHierarchyBean childBean = new WidgetHierarchyBean()
                         .setParent(divContentNode)
                         .setWidget(child)
-                        .setProcessInstance(processInstance)
+                        .setAttributesProvider(attributesProvider)
                         .setForcePrivileges(widgetHierarchyBean.isForcePrivileges())
                         .setPrivileges(widgetHierarchyBean.getPrivileges());
 
@@ -254,7 +255,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
                 WidgetHierarchyBean childBean = new WidgetHierarchyBean()
                         .setParent(divContentNode)
                         .setWidget(filteredChild)
-                        .setProcessInstance(processInstance)
+                        .setAttributesProvider(attributesProvider)
                         .setForcePrivileges(widgetHierarchyBean.isForcePrivileges())
                         .setPrivileges(widgetHierarchyBean.getPrivileges());
 
@@ -272,8 +273,8 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
             Map<String, Object> viewData = new HashMap<String, Object>();
             // viewData.put(IHtmlTemplateProvider.PROCESS_PARAMTER, processInstance);
             // viewData.put(IHtmlTemplateProvider.TASK_PARAMTER, task);
-            viewData.put(IHtmlTemplateProvider.ATTRIBUTES_PROVIDER, getViewedObject());
-            addSpecificHtmlWidgetData(viewData, getViewedObject());
+            viewData.put(IHtmlTemplateProvider.ATTRIBUTES_PROVIDER, attributesProvider);
+            addSpecificHtmlWidgetData(viewData, attributesProvider);
             viewData.put(IHtmlTemplateProvider.USER_PARAMTER, user);
             viewData.put(IHtmlTemplateProvider.USER_SOURCE_PARAMTER, userSource);
             viewData.put(IHtmlTemplateProvider.MESSAGE_SOURCE_PARAMETER, i18Source);
@@ -312,7 +313,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
                 WidgetHierarchyBean childBean = new WidgetHierarchyBean()
                         .setParent(divContentNode)
                         .setWidget(child)
-                        .setProcessInstance(processInstance)
+                        .setAttributesProvider(attributesProvider)
                         .setForcePrivileges(widgetHierarchyBean.isForcePrivileges())
                         .setPrivileges(widgetHierarchyBean.getPrivileges());
 
@@ -341,7 +342,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
                 WidgetHierarchyBean childBean = new WidgetHierarchyBean()
                         .setParent(iFrameNode)
                         .setWidget(child)
-                        .setProcessInstance(processInstance)
+                        .setAttributesProvider(attributesProvider)
                         .setForcePrivileges(widgetHierarchyBean.isForcePrivileges())
                         .setPrivileges(widgetHierarchyBean.getPrivileges());
 
@@ -580,6 +581,8 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
 
     protected abstract String getCancelButtonMessageKey();
 
+    protected abstract boolean isSubstitutingUser();
+
     /**
      * Get the id of the viewed object.
      *
@@ -589,7 +592,10 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
 
     protected Collection<String> getPrivileges(IStateWidget widget) {
         Collection<String> privileges = new ArrayList<String>();
-        if (!isUserAssignedToViewedObject() || isViewedObjectClosed())
+
+        boolean canEdit = isUserAssignedToViewedObject() || isSubstitutingUser();
+
+        if (!canEdit || isViewedObjectClosed())
             return privileges;
 
         for (IPermission permission : widget.getPermissions()) {
@@ -605,7 +611,7 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
     protected static class WidgetHierarchyBean {
         private IStateWidget widget;
         private Element parent;
-        private ProcessInstance processInstance;
+        private IAttributesProvider attributesProvider;
         private boolean forcePrivileges;
         private Collection<String> privileges;
 
@@ -627,12 +633,12 @@ public abstract class AbstractViewBuilder<T extends AbstractViewBuilder> {
             return this;
         }
 
-        public ProcessInstance getProcessInstance() {
-            return processInstance;
+        public IAttributesProvider getAttributesProvider() {
+            return attributesProvider;
         }
 
-        public WidgetHierarchyBean setProcessInstance(ProcessInstance processInstance) {
-            this.processInstance = processInstance;
+        public WidgetHierarchyBean setAttributesProvider(IAttributesProvider attributesProvider) {
+            this.attributesProvider = attributesProvider;
             return this;
         }
 

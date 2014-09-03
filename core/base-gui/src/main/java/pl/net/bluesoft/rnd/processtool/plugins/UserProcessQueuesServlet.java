@@ -72,8 +72,6 @@ public class UserProcessQueuesServlet extends HttpServlet
 		for(UsersQueuesDTO userQuueueSize: usersQueuesSize)
 		{
 			Map<String, Integer> userQueueMap = new HashMap<String, Integer>();
-			for(UserQueueDTO userQueue: userQuueueSize.getProcessesList())
-				userQueueMap.put(userQueue.getQueueId(), userQueue.getQueueSize());
 			
 			for(UserQueueDTO userQueue: userQuueueSize.getQueuesList())
 				userQueueMap.put(userQueue.getQueueId(), userQueue.getQueueSize());

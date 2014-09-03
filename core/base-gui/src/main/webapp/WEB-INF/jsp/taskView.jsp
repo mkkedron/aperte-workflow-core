@@ -7,8 +7,6 @@
 	<div class="process-queue-name apw_highlight" id="process-queue-name-id">
 		 
 	</div>
-
-	<%@include file="customQueueList.jsp" %>
 	
 	<div id="search-process-table">
 		<input type="text" id="processInputTextField" class="input-medium" placeholder="<spring:message code='processes.search.label' />">

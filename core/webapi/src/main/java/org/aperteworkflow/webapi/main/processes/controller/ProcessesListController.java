@@ -728,17 +728,10 @@ public class ProcessesListController extends AbstractProcessToolServletControlle
 
                 I18NSource messageSource = context.getMessageSource();
 
-                boolean isQueue = "queue".equals(queueType);
-
                 Map<String, Object> listViewParameters = new HashMap<String, Object>();
                 listViewParameters.put(AbstractTaskListView.PARAMETER_USER_LOGIN, ownerLogin);
 
                 ProcessInstanceFilter filter = listView.getProcessInstanceFilter(listViewParameters);
-
-                if (isQueue) {
-                    filter.addQueue(queueName);
-                    filter.setFilterOwnerLogin(queueName);
-                }
 
                 filter.setExpression(searchString);
                 filter.setLocale(messageSource.getLocale());
@@ -763,10 +756,6 @@ public class ProcessesListController extends AbstractProcessToolServletControlle
 
                 for (BpmTask task : tasks) {
                     TasksListViewBean taskViewBean = new TasksListViewBeanFactoryWrapper().createFrom(task, messageSource, viewName);
-
-                    if (isQueue) {
-                        taskViewBean.setQueueName(queueName);
-                    }
 
                     if(hasUserRightsToTask(context, task))
                         taskViewBean.setUserCanClaim(true);

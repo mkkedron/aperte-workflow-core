@@ -21,39 +21,43 @@
 		this.defaultQueueId = '';
 
 		this.currentQueue = '';
-		this.currentQueueType = '';
 		this.currentOwnerLogin = '${aperteUser.login}';
-		this.currentQueueDesc = '';
 		
-		this.loadQueue = function(newQueueName, queueType, ownerLogin, queueDesc)
+		this.loadQueue = function(queueId, ownerLogin)
 		{
-			var oldView = this.views[this.currentQueueType];
-			var newView = this.views[queueType];
 			
-			$('#'+oldView.viewName).hide();
-			$('#'+newView.viewName).show();
-			
-			
-			this.currentQueue = newQueueName;
-			this.currentQueueType = queueType;
+			this.removeCurrentQueue();
+				
+			this.currentQueue = queueId;
 			this.currentOwnerLogin = ownerLogin;
-			this.currentQueueDesc = queueDesc;
-
-			var requestUrl = '<portlet:resourceURL id="loadProcessesList"/>';
-			requestUrl += "&<portlet:namespace/>queueName=" + newQueueName;
-			requestUrl += "&<portlet:namespace/>queueType=" + queueType;
-			requestUrl += "&<portlet:namespace/>ownerLogin=" + ownerLogin;
 			
-			newView.tableObject.reloadTable(requestUrl);
 			
-			windowManager.showProcessList();
 			
-			$("#process-queue-name-id").text('<spring:message code="processes.currentqueue" />'+" "+queueDesc);
+			windowManager.showLoadingScreen();
+			//windowManager.changeUrl('?queueId='+queueId);
+			
+			var widgetJson = $.post('<portlet:resourceURL id="loadQueue"/>',
+			{
+				"queueId": queueId,
+				"ownerLogin": ownerLogin
+			})
+			.done(function(data) 
+			{
+				clearAlerts();
+				windowManager.showProcessData();
+				
+				$('#process-data-view').empty();
+				$("#process-data-view").append(data);
+				checkIfViewIsLoaded();
+			})
+			.fail(function(data, textStatus, errorThrown) {
+				
+			});
 		}
 		
 		this.reloadCurrentQueue = function()
 		{
-			this.loadQueue(this.currentQueue, this.currentQueueType, this.currentOwnerLogin, this.currentQueueDesc);
+			this.loadQueue(this.currentQueue, this.currentOwnerLogin);
 		}
 		
 		this.addTableView = function(queueId, tableObject, viewName)
@@ -66,15 +70,17 @@
 			var queue = this.views[queueId];
 			if(queue)
 			{
-				queue.tableObject.fnDestroy();
+				queue.tableObject.dataTable.fnDestroy();
 			}	
+
 		}
 		
 		this.removeCurrentQueue = function()
 		{
-			if(this.currentQueue != '')
+
+			if(this.currentQueue && this.currentQueue != '')
 			{
-				removeQueue(this.currentQueue);
+				//this.removeQueue(this.currentQueue);
 			}
 		}
 		
@@ -127,4 +133,26 @@
 			});
 		}
 	}
+
+    function claimTaskFromQueue(button, queueName, processStateConfigurationId, taskId)
+    {
+        $(button).prop('disabled', true);
+        windowManager.showLoadingScreen();
+
+        var bpmJson = $.post(claimTaskFromQueuePortlet,
+        {
+            "queueName": queueName,
+            "taskId": taskId,
+            "userId": queueViewManager.currentOwnerLogin
+        }, function(task)
+        {
+            clearAlerts();
+            reloadQueues();
+            loadProcessView(task.taskId);
+        })
+        .fail(function(request, status, error)
+        {
+
+        });
+    }
 </script>

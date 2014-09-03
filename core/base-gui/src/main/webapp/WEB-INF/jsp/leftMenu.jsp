@@ -162,32 +162,22 @@
 					.appendTo( '#'+accordionID+"-panel" );
 					
 					
-					$.each( this.processesList, function( ) 
-					{	
-						if ( this.queueId != "user-task-name-activity-created-closed-tasks") {
-						
-							addProcessRow(this, accordionID, currentUserLogin);
-							
-							<!-- Test current queue for reload only if changed queue is shown and user is viewing process list -->
-							if(queueViewManager.currentQueue == this.queueName 
-								&& windowManager.currentView == 'process-panel-view'
-								&& queueViewManager.currentOwnerLogin == currentUserLogin)
-							{
-
-								if(oldProcessCount != this.queueSize)
-								{
-									queueViewManager.reloadCurrentQueue();
-									oldProcessCount = this.queueSize;
-								}
-							}
-						}
-					});
-					
 					$.each( this.queuesList, function( ) 
-					{
-						if ( this.queueId != "user-task-name-activity-created-closed-tasks") {
+					{	
 						
-							addQueueRow(this, accordionID, currentUserLogin);
+						addProcessRow(this, accordionID, currentUserLogin);
+						
+						<!-- Test current queue for reload only if changed queue is shown and user is viewing process list -->
+						if(queueViewManager.currentQueue == this.queueName 
+							&& windowManager.currentView == 'process-panel-view'
+							&& queueViewManager.currentOwnerLogin == currentUserLogin)
+						{
+
+							if(oldProcessCount != this.queueSize)
+							{
+								queueViewManager.reloadCurrentQueue();
+								oldProcessCount = this.queueSize;
+							}
 						}
 					});
 					
@@ -216,7 +206,7 @@
 		$(document).ready(function () {
 			$('[name="tooltip"]').tooltip();
 			$("#"+layoutId).on("click", function () {
-				loadProcessListView( 
+				queueViewManager.loadQueue(
 						$(this).attr('data-queue-id'),
 						$(this).attr('data-user-login'));
 
@@ -233,35 +223,8 @@
 		if(queueViewManager.defaultQueueId == '')
 		{
 			queueViewManager.defaultQueueId = processRow.queueId;
-			loadProcessListView(processRow.queueId, userLogin);
+			queueViewManager.loadQueue(processRow.queueId, userLogin);
 		}
-
-	}
-
-	function addQueueRow(queueRow, accordionID, userLogin)
-	{
-		var layoutId = 'queue-view-' + queueRow.queueId+'-'+userLogin;
-		var innerDivId = queueRow.queueId+'-'+userLogin;
-		
-
-		$( "<li>", { id : layoutId, "class": "list-group-item list-group-item-left-menu", "data-queue-name": queueRow.queueName, "data-user-login" : userLogin, "data-queue-type" : "queue", "data-queue-desc" : queueRow.queueDesc} )
-		.appendTo( '#'+accordionID );
-		
-		$(document).ready(function () {
-			$("#"+layoutId).on("click", function () {
-				loadProcessListView( 
-						$(this).attr('data-queue-id'),
-						$(this).attr('data-user-login'));
-			});
-		});
-		
-		$( "<div>", { "class": "badge badge-queue-link", text: queueRow.queueSize} )
-		.appendTo( '#'+layoutId );
-		
-		
-		$( "<div>", { id : 'link-'+queueRow.queueId, "class": "queue-list-link", text: queueRow.queueDesc } )
-		.appendTo( '#'+layoutId );
-		
 
 	}
 	
@@ -278,37 +241,17 @@
 		reloadQueuesLoopTimer.stop();
 		reloadQueuesLoopTimer.play(true);
 		reloadQueues();
-		queueViewManager.loadQueue(queueId, queueType, ownerLogin, queueDesc);
 	}
 	
-	function loadProcessListView(queueId, ownerLogin)
-	{
-		windowManager.changeUrl('?queueId='+queueId);
-		queueViewManager.removeCurrentQueue();
-		windowManager.showLoadingScreen();
-		var widgetJson = $.post('<portlet:resourceURL id="loadQueue"/>',
-		{
-			"queueId": queueId,
-			"ownerLogin": ownerLogin
-		})
-		.done(function(data) 
-		{
-			clearAlerts();
-			windowManager.showProcessData();
-			$('#process-data-view').empty();
-			$("#process-data-view").append(data);
-			checkIfViewIsLoaded();
-		})
-		.fail(function(data, textStatus, errorThrown) {
-			
-		});
-	}
 
 	
 	function loadProcessView(taskId)
 	{
+		queueViewManager.removeCurrentQueue();
 		windowManager.changeUrl('?taskId='+taskId);
 		windowManager.showLoadingScreen();
+		
+		
 
 		var widgetJson = $.post('<portlet:resourceURL id="loadTask"/>',
 		{

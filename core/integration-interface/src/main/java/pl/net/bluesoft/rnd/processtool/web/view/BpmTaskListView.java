@@ -6,7 +6,7 @@ import pl.net.bluesoft.rnd.processtool.web.domain.IContentProvider;
 import java.util.Map;
 
 /**
- * @author: Maciej
+ * @author: mpawlak@bluesoft.net.pl
  */
 @TaskListView(
         queueId = "myTasks",
@@ -14,6 +14,7 @@ import java.util.Map;
         queueDisplayedDescription = "aperte.task.view.mytasks.desc",
         fileName = "my-task-bpm-task.html",
         mainFactory = BpmTaskBeanFactory.class,
+        queueType = AbstractTaskListView.QueueTypes.PROCESS,
         priority = 1,
         processFactories = {}
 )

@@ -422,7 +422,7 @@
 				 },
 				 { "sName":"actions", "bSortable": false , "mData": function(o) { return ""; }, "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) { return generateActionsColumn(nTd, sData, oData.item, iRow, iCol) }
 				 },
-				 { "sName":"value", "bSortable": false , "mData": function(o) {console.log(o); return o.value; }
+				 { "sName":"value", "bSortable": false , "mData": function(o) { return o.value; }
 				 },
 				 { "sName":"name", "bSortable": false , "mData": function(o) { return o.nameCostAccount; }
 				 },
@@ -461,7 +461,6 @@
 
         function generateValue(o) {
         	var result;
-			console.log(o.values.value);
 
 			return result;
         }
@@ -527,7 +526,6 @@
         });
 		$('#dictName').on('change', function(){
 			currentDict = $('#dictName').val();
-			console.log(currentDict);
 			if(currentDict=='cost_accounts')
 			{
 				itemsTable = itemsTableCostAccount;
@@ -630,7 +628,6 @@
 	function edit(item) {
         $("#itemsList").hide();
         currentItem = item;
-        console.log(item);
         currentItem.selectedLanguage = "default";
         $('input:radio[name=languageSelector-itemDesc][value=default]').prop('checked', true);
         refreshValuesTable();
@@ -666,10 +663,7 @@
 		var url = dispatcherPortlet;
         url += "&dictId=" + encodeURI(currentDict.replace(/#/g, '%23'));
         // itemsTable.addParameter("dictId", currentDict);
-        console.log('reload');
-        console.log(url);
 		itemsTable.reloadTable(url);
-		console.log('afterReload');
 	}
 
 	function refreshValuesTable() {

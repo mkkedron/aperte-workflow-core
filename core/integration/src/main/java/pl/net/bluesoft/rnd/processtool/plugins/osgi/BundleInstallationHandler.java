@@ -598,11 +598,6 @@ public class BundleInstallationHandler {
                         (Class<? extends AbstractTaskListView>)bundleHelper.getBundle().loadClass(cls);
                 TaskListView viewAnnotation = viewClass.getAnnotation(TaskListView.class);
 
-                String viewName = viewAnnotation.queueId();
-                if(viewName == null || viewName.isEmpty()) {
-                    throw new RuntimeException("Error during task list factory registration: no view name declarated");
-                }
-
                 String fileName = viewAnnotation.fileName();
                 if(fileName == null || fileName.isEmpty()) {
                     throw new RuntimeException("Error during task list factory registration: no file name declarated");
@@ -626,6 +621,11 @@ public class BundleInstallationHandler {
                 Integer priority = viewAnnotation.priority();
                 if(fileName == null || fileName.isEmpty()) {
                     throw new RuntimeException("Error during task list factory registration: no file name declarated");
+                }
+
+                AbstractTaskListView.QueueTypes queueType = viewAnnotation.queueType();
+                if(queueType == null) {
+                    throw new RuntimeException("Error during task list factory registration: no queueType declarated");
                 }
 
 
@@ -660,14 +660,15 @@ public class BundleInstallationHandler {
 
                     taskView.setPriority(priority);
                     taskView.setQueueId(queueId);
+                    taskView.setQueueType(queueType);
                     taskView.setQueueDisplayedName(queueDisplayedName);
                     taskView.setQueueDisplayedDesc(queueDisplayedDescription);
 
-                    processToolRegistry.getGuiRegistry().registerTasksListView(viewName, taskView);
+                    processToolRegistry.getGuiRegistry().registerTasksListView(queueId, taskView);
                 }
                 else
                 {
-                    processToolRegistry.getGuiRegistry().unregisterTasksListView(viewName);
+                    processToolRegistry.getGuiRegistry().unregisterTasksListView(queueId);
                 }
             }
             catch (Throwable e)

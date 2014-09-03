@@ -11,8 +11,16 @@ import java.util.*;
  */
 public abstract class AbstractTaskListView implements Comparable<AbstractTaskListView>
 {
+    public static enum QueueTypes
+    {
+        PROCESS,
+        CUSTOM_QUEUE
+    }
+
+
     public static final String PARAMETER_USER_LOGIN = "userLogin";
 
+    private QueueTypes queueType;
     private IContentProvider contentProvider;
     private Integer priority;
     private String queueDisplayedName;
@@ -112,5 +120,13 @@ public abstract class AbstractTaskListView implements Comparable<AbstractTaskLis
 
     public void setQueueId(String queueId) {
         this.queueId = queueId;
+    }
+
+    public QueueTypes getQueueType() {
+        return queueType;
+    }
+
+    public void setQueueType(QueueTypes queueType) {
+        this.queueType = queueType;
     }
 }
