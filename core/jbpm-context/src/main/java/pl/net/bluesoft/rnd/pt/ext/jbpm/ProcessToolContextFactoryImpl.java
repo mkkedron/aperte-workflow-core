@@ -160,13 +160,15 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
                 result = callback.processWithContext(ctx);
 
                 try {
-                    tx.commit();
+                    if(!tx.wasCommitted())
+                        tx.commit();
                 }
                 catch (Throwable ex)
                 {
                     logger.log(Level.SEVERE, "Problem during context executing", ex);
                     try {
-                        tx.rollback();
+                        if(!tx.wasRolledBack())
+                            tx.rollback();
 
                     }
                     catch (Exception e1) {
@@ -200,7 +202,8 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
             {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 try {
-                    tx.rollback();
+                    if(!tx.wasRolledBack())
+                        tx.rollback();
                 }
                 catch (Exception e1) {
                     logger.log(Level.WARNING, e1.getMessage(), e1);
@@ -216,7 +219,8 @@ public class ProcessToolContextFactoryImpl implements ProcessToolContextFactory
         }
         finally
         {
-            if (session.isOpen()) session.close();
+            if (session.isOpen())
+                session.close();
         }
         return result;
     }

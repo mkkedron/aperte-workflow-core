@@ -31,4 +31,10 @@ public class BpmTaskListView extends AbstractTaskListView
         ProcessInstanceFilterFactory filterFactory = new ProcessInstanceFilterFactory();
         return filterFactory.createAllTasksFilter((String)parameters.get(PARAMETER_USER_LOGIN));
     }
+
+    @Override
+    public IBpmTaskQueryCondition getBpmTaskQueryCondition() {
+        /* Standard bpm task query */
+        return new BpmTaskQueryCondition();
+    }
 }

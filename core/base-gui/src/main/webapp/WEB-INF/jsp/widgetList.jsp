@@ -11,6 +11,10 @@
 	<div id="actions-list" class="actions-view">
 	</div>
 </div>
+<div id="process-queue-view" class="process-data-view" hidden="true">
+
+</div>
+
 
 <script type="text/javascript">
 //<![CDATA[	
@@ -23,6 +27,7 @@
 	$(document).ready(function()
 	{
 		windowManager.addView("process-data-view");
+		windowManager.addView("process-queue-view");
 	});
 	
 	<!-- Widget class  -->

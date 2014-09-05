@@ -2,10 +2,7 @@ package pl.net.bluesoft.rnd.processtool.ui.basewidgets.queues;
 
 import pl.net.bluesoft.rnd.processtool.ui.basewidgets.queues.beans.DefaultQueueBeanFactory;
 import pl.net.bluesoft.rnd.processtool.web.domain.IContentProvider;
-import pl.net.bluesoft.rnd.processtool.web.view.AbstractTaskListView;
-import pl.net.bluesoft.rnd.processtool.web.view.ITasksListViewBeanFactory;
-import pl.net.bluesoft.rnd.processtool.web.view.ProcessInstanceFilter;
-import pl.net.bluesoft.rnd.processtool.web.view.TaskListView;
+import pl.net.bluesoft.rnd.processtool.web.view.*;
 
 import java.util.Map;
 
@@ -33,5 +30,10 @@ public class DefaultQueueView extends AbstractTaskListView
         processInstanceFilter.setFilterOwnerLogin("controlling");
         processInstanceFilter.addQueue("controlling");
         return processInstanceFilter;
+    }
+
+    @Override
+    public IBpmTaskQueryCondition getBpmTaskQueryCondition() {
+        return new BpmTaskQueryCondition();
     }
 }

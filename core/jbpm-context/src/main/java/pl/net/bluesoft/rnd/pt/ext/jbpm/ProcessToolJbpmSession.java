@@ -372,7 +372,7 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
         return new BpmTaskQuery(dataRegistry.getHibernateDialect())
                 .user(queueFilter.getFilterOwnerLogin())
                 .virtualQueues(queueFilter.getQueueTypes())
-                .queryConditions(new BpmTaskBeanFactory().getBpmTaskQueryCondition())
+                .queryConditions(new BpmTaskQueryCondition())
                 .count();
 	}
 
@@ -495,13 +495,12 @@ public class ProcessToolJbpmSession extends AbstractProcessToolSession implement
 		BpmTaskQuery taskFilterQuery = new BpmTaskQuery(dataRegistry.getHibernateDialect());
 
         if(filter.getViewName()==null || filter.getViewName().isEmpty())
-            taskFilterQuery.queryConditions(new BpmTaskBeanFactory().getBpmTaskQueryCondition());
+            taskFilterQuery.queryConditions(new BpmTaskQueryCondition());
         else
         {
             AbstractTaskListView taskView = registry.getGuiRegistry().getTasksListView(filter.getViewName());
-            /* Get factory class by process instance */
-            ITasksListViewBeanFactory factory = taskView.getProcessFactory(filter.getProcessBpmKey());
-            taskFilterQuery.queryConditions(factory.getBpmTaskQueryCondition());
+
+            taskFilterQuery.queryConditions(taskView.getBpmTaskQueryCondition());
         }
 
         if (!filter.getQueueTypes().isEmpty()) {
