@@ -221,7 +221,6 @@
 		// Check if there is any defauly queueId
 		if(queueViewManager.defaultQueueId == '')
 		{
-			console.log('set default: '+processRow.queueId);
 			queueViewManager.defaultQueueId = processRow.queueId;
 			queueViewManager.defaultOwnerLogin = userLogin;
 			if(windowManager.isQueueShown() == true)
