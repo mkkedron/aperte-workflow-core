@@ -31,6 +31,7 @@ public class BpmTaskBean extends TasksListViewBean
 	private String tooltip;
     private String step;
 	private String stepInfo;
+    private String description;
 
 	public BpmTaskBean createFrom(BpmTask task, I18NSource messageSource)
 	{
@@ -187,4 +188,12 @@ public class BpmTaskBean extends TasksListViewBean
 	public void setStepInfo(String stepInfo) {
 		this.stepInfo = stepInfo;
 	}
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }

@@ -70,6 +70,7 @@
 
 		$("#substitute-user-${widgetId}").select2(
 		{
+		    minimumInputLength: 3,
             ajax: {
                 url: dispatcherPortlet,
                 dataType: 'json',
