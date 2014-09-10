@@ -54,10 +54,4 @@ public class BpmTaskBeanFactory implements ITasksListViewBeanFactory {
         taskBean.setStepInfo(task.getStepInfo());
         return taskBean;
     }
-
-    @Override
-    public IBpmTaskQueryCondition getBpmTaskQueryCondition() {
-        /* Standard bpm task query */
-        return new BpmTaskQueryCondition();
-    }
 }

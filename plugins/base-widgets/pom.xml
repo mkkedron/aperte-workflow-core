@@ -157,7 +157,8 @@
                             pl.net.bluesoft.rnd.processtool.ui.basewidgets.steps.CopyVariablesStep,
                             pl.net.bluesoft.rnd.processtool.ui.basewidgets.steps.LogStep,
                             pl.net.bluesoft.rnd.processtool.ui.basewidgets.steps.GetAssignedToStep,
-                            pl.net.bluesoft.rnd.processtool.ui.basewidgets.steps.SetProcessBusinessStatus
+                            pl.net.bluesoft.rnd.processtool.ui.basewidgets.steps.SetProcessBusinessStatus,
+                            pl.net.bluesoft.rnd.processtool.ui.basewidgets.steps.CopyOwnersStep
                         </ProcessTool-Step-Enhancement>
                         <ProcessTool-Controller>
                             pl.net.bluesoft.rnd.processtool.ui.basewidgets.controller.UserController,

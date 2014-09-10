@@ -9,6 +9,4 @@ import pl.net.bluesoft.rnd.util.i18n.I18NSource;
 public interface ITasksListViewBeanFactory {
     public TasksListViewBean createFrom(BpmTask task, I18NSource messageSource);
 
-    public IBpmTaskQueryCondition getBpmTaskQueryCondition();
-
 }

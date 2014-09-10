@@ -166,13 +166,11 @@
 					{	
 						
 						addProcessRow(this, accordionID, currentUserLogin);
-						
 						<!-- Test current queue for reload only if changed queue is shown and user is viewing process list -->
-						if(queueViewManager.currentQueue == this.queueName 
-							&& windowManager.currentView == 'process-panel-view'
+						if(queueViewManager.currentQueue == this.queueId 
+							&& windowManager.isQueueShown() == true
 							&& queueViewManager.currentOwnerLogin == currentUserLogin)
 						{
-
 							if(oldProcessCount != this.queueSize)
 							{
 								queueViewManager.reloadCurrentQueue();
@@ -209,6 +207,7 @@
 				queueViewManager.loadQueue(
 						$(this).attr('data-queue-id'),
 						$(this).attr('data-user-login'));
+				reloadQueues();
 
 			});
 		});
@@ -223,7 +222,11 @@
 		if(queueViewManager.defaultQueueId == '')
 		{
 			queueViewManager.defaultQueueId = processRow.queueId;
-			queueViewManager.loadQueue(processRow.queueId, userLogin);
+			queueViewManager.defaultOwnerLogin = userLogin;
+			if(windowManager.isQueueShown() == true)
+			{
+				queueViewManager.loadQueue(processRow.queueId, userLogin);
+			}
 		}
 
 	}
@@ -260,9 +263,7 @@
 		.done(function(data) 
 		{
 			clearAlerts();
-			windowManager.showProcessData();
-			$('#process-data-view').empty();
-			$("#process-data-view").append(data);
+			windowManager.showProcessData(data);
 			checkIfViewIsLoaded();
 		})
 		.fail(function(data, textStatus, errorThrown) {

@@ -19,13 +19,13 @@
 		this.views = {};
 		
 		this.defaultQueueId = '';
-
+		this.defaultOwnerLogin = '';
+		
 		this.currentQueue = '';
 		this.currentOwnerLogin = '${aperteUser.login}';
 		
 		this.loadQueue = function(queueId, ownerLogin)
 		{
-			
 			this.removeCurrentQueue();
 				
 			this.currentQueue = queueId;
@@ -35,7 +35,7 @@
 			
 			windowManager.showLoadingScreen();
 			//windowManager.changeUrl('?queueId='+queueId);
-			
+
 			var widgetJson = $.post('<portlet:resourceURL id="loadQueue"/>',
 			{
 				"queueId": queueId,
@@ -44,10 +44,8 @@
 			.done(function(data) 
 			{
 				clearAlerts();
-				windowManager.showProcessData();
+				windowManager.showProcessList(data);
 				
-				$('#process-data-view').empty();
-				$("#process-data-view").append(data);
 				checkIfViewIsLoaded();
 			})
 			.fail(function(data, textStatus, errorThrown) {
@@ -57,6 +55,11 @@
 		
 		this.reloadCurrentQueue = function()
 		{
+			if(this.currentQueue == '')
+			{
+				this.currentQueue = this.defaultQueueId;
+				this.currentOwnerLogin = this.defaultOwnerLogin;
+			}
 			this.loadQueue(this.currentQueue, this.currentOwnerLogin);
 		}
 		

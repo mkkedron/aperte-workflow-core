@@ -74,11 +74,6 @@ public class DefaultQueueBeanFactory implements ITasksListViewBeanFactory
         return taskBean;
     }
 
-    @Override
-    public IBpmTaskQueryCondition getBpmTaskQueryCondition() {
-        return null;
-    }
-
     private Date getDeadline(BpmTask task)
     {
         return task.getDeadlineDate();
